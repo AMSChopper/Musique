@@ -1,34 +1,395 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --bg-default: #121212;
+    --bg-surface: #181818;
+    --bg-elevated: #282828;
+    --bg-highlight: #333333;
+    --primary: #1db954;
+    --primary-hover: #1ed760;
+    --text-primary: #FFFFFF;
+    --text-secondary: #B3B3B3;
+    --text-muted: #7A7A7A;
+    --border-default: #282828;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-.App-header {
-    background-color: #0f0f10;
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--bg-default);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-default);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bg-highlight);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-fadeIn {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-pulse {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+.animate-slideIn {
+    animation: slideIn 0.3s ease-out forwards;
+}
+
+/* Staggered animations */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+
+/* Glassmorphism */
+.glass {
+    background: rgba(24, 24, 24, 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+/* Card hover effect */
+.card-hover {
+    transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+    transform: scale(1.03);
+    background-color: var(--bg-elevated);
+}
+
+/* Primary button */
+.btn-primary {
+    background-color: var(--primary);
+    color: #000;
+    font-weight: 700;
+    padding: 12px 32px;
+    border-radius: 9999px;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+    transform: scale(1.05);
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Secondary button */
+.btn-secondary {
+    background: transparent;
+    color: var(--text-primary);
+    font-weight: 600;
+    padding: 12px 32px;
+    border-radius: 9999px;
+    border: 1px solid var(--text-muted);
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.btn-secondary:hover {
+    border-color: var(--text-primary);
+}
+
+/* Search input */
+.search-input {
+    background-color: var(--bg-elevated);
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    padding: 14px 24px;
+    padding-left: 48px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    width: 100%;
+    transition: all 0.2s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--text-primary);
+    background-color: var(--bg-highlight);
+}
+
+.search-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* Feature card */
+.feature-card {
+    background-color: var(--bg-surface);
+    border-radius: 16px;
+    padding: 32px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.feature-card:hover {
+    transform: scale(1.03);
+    background-color: var(--bg-elevated);
+    border-color: var(--primary);
+}
+
+/* Artist card */
+.artist-card {
+    background-color: var(--bg-surface);
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.3s ease;
+}
+
+.artist-card:hover {
+    background-color: var(--bg-elevated);
+}
+
+/* Album card */
+.album-card {
+    background-color: var(--bg-surface);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.album-card:hover {
+    transform: scale(1.05);
+    background-color: var(--bg-elevated);
+}
+
+/* Track row */
+.track-row {
+    padding: 12px 16px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.track-row:hover {
+    background-color: var(--bg-elevated);
+}
+
+/* Billboard row */
+.billboard-row {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-default);
+    transition: all 0.2s ease;
+}
+
+.billboard-row:hover {
+    background-color: var(--bg-elevated);
+}
+
+/* Loading skeleton */
+.skeleton {
+    background: linear-gradient(90deg, var(--bg-surface) 0%, var(--bg-elevated) 50%, var(--bg-surface) 100%);
+    background-size: 200% 100%;
+    animation: skeleton 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* YouTube embed container */
+.youtube-container {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+.youtube-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* Blind test choice button */
+.choice-btn {
+    background-color: var(--bg-surface);
+    border: 2px solid var(--border-default);
+    border-radius: 12px;
+    padding: 16px 24px;
+    color: var(--text-primary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    width: 100%;
+}
+
+.choice-btn:hover:not(:disabled) {
+    border-color: var(--primary);
+    background-color: var(--bg-elevated);
+}
+
+.choice-btn.correct {
+    border-color: var(--primary);
+    background-color: rgba(29, 185, 84, 0.2);
+}
+
+.choice-btn.incorrect {
+    border-color: #e74c3c;
+    background-color: rgba(231, 76, 60, 0.2);
+}
+
+.choice-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+/* Progress bar */
+.progress-bar {
+    height: 4px;
+    background-color: var(--bg-elevated);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: var(--primary);
+    transition: width 0.3s ease;
+}
+
+/* Gradient backgrounds */
+.gradient-hero {
+    background: linear-gradient(to bottom, rgba(29, 185, 84, 0.15), var(--bg-default));
+}
+
+.gradient-overlay {
+    background: linear-gradient(to top, var(--bg-default), transparent);
+}
+
+/* Year selector */
+.year-btn {
+    padding: 8px 16px;
+    border-radius: 9999px;
+    background-color: transparent;
+    border: 1px solid var(--border-default);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.year-btn:hover {
+    border-color: var(--text-primary);
+    color: var(--text-primary);
+}
+
+.year-btn.active {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: #000;
+}
+
+/* Dropdown */
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--bg-elevated);
+    border-radius: 12px;
+    margin-top: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    z-index: 50;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.dropdown-item {
+    padding: 12px 16px;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.App-link {
-    color: #61dafb;
+.dropdown-item:hover {
+    background-color: var(--bg-highlight);
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+/* Spotify-like grid for albums */
+.albums-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 24px;
+}
+
+/* Score badge */
+.score-badge {
+    background: linear-gradient(135deg, var(--primary), #15803d);
+    padding: 8px 24px;
+    border-radius: 9999px;
+    font-weight: 700;
+    font-size: 1.25rem;
 }
