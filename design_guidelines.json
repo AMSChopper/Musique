@@ -1,0 +1,83 @@
+{
+  "theme": "dark",
+  "archetype": "Archetype 5 (Jewel & Luxury) / Spotify-inspired Custom Dark Theme",
+  "design_philosophy": "A premium, deeply immersive musical encyclopedia. Emphasizes near-black backgrounds to make album art and visuals pop, using vibrant green accents to guide user action. High contrast, clean geometric typography, and smooth transitions mirror top-tier audio software.",
+  "colors": {
+    "background": {
+      "default": "#121212",
+      "surface": "#181818",
+      "surface_elevated": "#282828",
+      "surface_highlight": "#333333"
+    },
+    "primary": {
+      "default": "#1db954",
+      "hover": "#1ed760",
+      "foreground": "#000000"
+    },
+    "text": {
+      "primary": "#FFFFFF",
+      "secondary": "#B3B3B3",
+      "muted": "#7A7A7A"
+    },
+    "border": {
+      "default": "#282828",
+      "focus": "#1db954"
+    }
+  },
+  "typography": {
+    "heading_font": "Plus Jakarta Sans",
+    "body_font": "Inter",
+    "scales": {
+      "h1": "text-4xl sm:text-5xl lg:text-6xl tracking-tight font-black text-white",
+      "h2": "text-2xl sm:text-3xl lg:text-4xl tracking-tight font-bold text-white",
+      "h3": "text-xl sm:text-2xl font-semibold text-white",
+      "body": "text-base font-normal text-[#B3B3B3] leading-relaxed",
+      "small": "text-sm font-medium text-[#B3B3B3] uppercase tracking-widest"
+    }
+  },
+  "spacing_and_layout": {
+    "container_padding": "p-4 md:p-8 lg:p-12",
+    "section_gap": "gap-8 md:gap-16",
+    "grid_strategy": "Control Room Grid for data (charts, top tracks), Tetris Grid for feature showcasing.",
+    "border_radius": "rounded-xl for cards, rounded-full for buttons and search inputs"
+  },
+  "components": {
+    "cards": "Flat background (#181818), no border by default. On hover: bg-[#282828] with subtle scale-up (scale-105). No heavy drop shadows; use color luminance for depth.",
+    "buttons": "Primary: bg-[#1db954] text-black font-bold rounded-full hover:scale-105 hover:bg-[#1ed760] transition-all. Secondary: transparent with 1px border border-[#7A7A7A] text-white rounded-full hover:border-white.",
+    "header": "Sticky navigation, backdrop-blur-xl bg-[#121212]/80. Must have clear search bar (rounded-full) and navigation links.",
+    "search_input": "bg-[#282828] border-transparent rounded-full px-6 py-3 text-white focus:ring-2 focus:ring-white transition-all.",
+    "tables": "For Billboard charts: border-b border-[#282828] on rows, hover:bg-[#282828] transition-colors, prominent numbering."
+  },
+  "motion": {
+    "default_transition": "transition-all duration-300 ease-in-out",
+    "hover_effects": "Cards scale by 1.05. Play buttons fade in on card hover. List items background shifts slightly lighter."
+  },
+  "media": {
+    "hero_background": {
+      "url": "https://images.unsplash.com/photo-1710678832243-cbfb55a0b806?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODl8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGRhcmslMjBncmVlbnxlbnwwfHx8fDE3NzYyMDY2ODR8MA&ixlib=rb-4.1.0&q=85",
+      "description": "Abstract blurry dark green background to be used with a heavy opacity overlay (bg-black/80) to give a subtle textured dark vibe."
+    },
+    "concert_scene": {
+      "url": "https://images.pexels.com/photos/3122799/pexels-photo-3122799.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "description": "Vibrant live concert scene. Can be used for the Blind Test landing or hero banner overlay."
+    },
+    "blind_test_bg": {
+      "url": "https://images.pexels.com/photos/894557/pexels-photo-894557.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "description": "Silhouetted performers energizing a concert crowd. Use as a background for the blind test game with bg-black/70 overlay."
+    },
+    "vinyl_feature": {
+      "url": "https://images.unsplash.com/photo-1558584673-c834fb1cc3ca?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNzl8MHwxfHNlYXJjaHwxfHx2aW55bCUyMHBsYXllciUyMG1vZGVybnxlbnwwfHx8fDE3NzYyMDY2ODR8MA&ixlib=rb-4.1.0&q=85",
+      "description": "Modern vinyl player for decorative feature section."
+    }
+  },
+  "icons_library": "lucide-react",
+  "instructions_to_main_agent": [
+    "Use pure HTML and Tailwind CSS utilities.",
+    "Set the main background to #121212 and text color to #FFFFFF.",
+    "Implement the UI in French as requested ('Rechercher des artistes', 'Top 100', 'Blind Test').",
+    "Ensure the search bar has a rounded-full aesthetic.",
+    "For Artist Detail Page, use a bento grid or 2-column layout (Top Tracks as lists, Albums as grid).",
+    "Blind Test game must use YouTube player seamlessly and include score tracking.",
+    "Use data-testid attributes on all interactive elements (buttons, links, inputs)."
+  ]
+}
