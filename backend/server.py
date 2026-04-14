@@ -211,6 +211,45 @@ async def get_artist_top_tracks(artist_id: int, limit: int = 10):
         logger.error(f"Deezer API error: {e}")
         raise HTTPException(status_code=500, detail="Failed to get top tracks")
 
+@api_router.get("/artist/{artist_id}/related")
+async def get_artist_related(artist_id: int, limit: int = 10):
+    """Get related/collaborating artists from Deezer"""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{DEEZER_API}/artist/{artist_id}/related",
+                params={"limit": limit}
+            )
+            data = response.json()
+            
+            if "error" in data:
+                raise HTTPException(status_code=404, detail="Artist not found")
+            
+            related = []
+            for item in data.get("data", []):
+                # Create initials from name
+                name_parts = item.get("name", "").split()
+                initials = ""
+                if len(name_parts) >= 2:
+                    initials = name_parts[0][0].upper() + "." + name_parts[-1][0].upper()
+                elif len(name_parts) == 1:
+                    initials = name_parts[0][:2].upper()
+                
+                related.append({
+                    "id": item.get("id"),
+                    "name": item.get("name"),
+                    "initials": initials,
+                    "picture": item.get("picture"),
+                    "picture_medium": item.get("picture_medium"),
+                    "picture_big": item.get("picture_big"),
+                    "nb_fan": item.get("nb_fan")
+                })
+            
+            return {"related": related}
+    except httpx.RequestError as e:
+        logger.error(f"Deezer API error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get related artists")
+
 # ==================== BILLBOARD SCRAPING ====================
 
 @api_router.get("/billboard/hot100")

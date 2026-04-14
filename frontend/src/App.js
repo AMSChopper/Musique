@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import "@/App.css";
 import { BrowserRouter, Routes, Route, useNavigate, useParams, Link } from "react-router-dom";
 import axios from "axios";
-import { Search, Trophy, Music, ArrowLeft, Play, Clock, Disc, Users, ChevronRight, Volume2, Check, X, Loader2 } from "lucide-react";
+import { Search, Trophy, Music, ArrowLeft, Play, Clock, Disc, Users, ChevronRight, Volume2, Check, X, Loader2, Pen } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -225,6 +225,7 @@ const ArtistPage = () => {
   const [artist, setArtist] = useState(null);
   const [albums, setAlbums] = useState([]);
   const [topTracks, setTopTracks] = useState([]);
+  const [relatedArtists, setRelatedArtists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -233,15 +234,17 @@ const ArtistPage = () => {
       setLoading(true);
       setError(null);
       try {
-        const [artistRes, albumsRes, tracksRes] = await Promise.all([
+        const [artistRes, albumsRes, tracksRes, relatedRes] = await Promise.all([
           axios.get(`${API}/artist/${artistId}`),
           axios.get(`${API}/artist/${artistId}/albums`),
-          axios.get(`${API}/artist/${artistId}/top`)
+          axios.get(`${API}/artist/${artistId}/top`),
+          axios.get(`${API}/artist/${artistId}/related`)
         ]);
         
         setArtist(artistRes.data);
         setAlbums(albumsRes.data.albums || []);
         setTopTracks(tracksRes.data.tracks || []);
+        setRelatedArtists(relatedRes.data.related || []);
       } catch (err) {
         console.error("Error fetching artist:", err);
         setError("Impossible de charger les données de l'artiste");
@@ -392,6 +395,49 @@ const ArtistPage = () => {
             </div>
           </div>
         </div>
+
+        {/* Collaborations & Connexions Section */}
+        {relatedArtists.length > 0 && (
+          <div className="mt-16" data-testid="collaborations-section">
+            <h2 className="text-2xl font-bold mb-2">Collaborations & Connexions</h2>
+            <p className="text-[#B3B3B3] text-sm mb-6">Artistes liés et collaborateurs</p>
+            
+            <div className="collab-grid">
+              {relatedArtists.slice(0, 10).map((related, index) => (
+                <div 
+                  key={related.id}
+                  className="collab-item animate-fadeIn"
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                  onClick={() => navigate(`/artist/${related.id}`)}
+                  data-testid={`collab-${related.id}`}
+                >
+                  {/* Random ghostwriter badge for demo - in real app this would come from data */}
+                  {index === 2 && (
+                    <span className="ghost-writer-badge">
+                      <Pen className="w-3 h-3 inline mr-1" />
+                      PLUME
+                    </span>
+                  )}
+                  <div className={`collab-circle ${index === 2 ? 'ghostwriter' : ''}`}>
+                    {related.picture_medium ? (
+                      <img 
+                        src={related.picture_medium} 
+                        alt={related.name}
+                        onError={(e) => { 
+                          e.target.style.display = 'none';
+                          e.target.parentNode.innerText = related.initials;
+                        }}
+                      />
+                    ) : (
+                      related.initials
+                    )}
+                  </div>
+                  <span className="collab-name">{related.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Back button */}
