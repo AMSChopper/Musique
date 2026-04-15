@@ -267,22 +267,25 @@ DISCOGS_HEADERS = {
 
 def get_artist_songwriting_data(artist_name: str):
     """Get curated songwriting data for an artist"""
-    # Normalize artist name
-    normalized = artist_name.lower().strip()
+    import unicodedata
+    
+    def strip_accents(s):
+        return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
+    
+    # Normalize artist name - remove accents + lowercase
+    normalized = strip_accents(artist_name.lower().strip())
     
     # Try exact match first
-    if normalized in FAMOUS_SONGWRITING_CREDITS:
-        return FAMOUS_SONGWRITING_CREDITS[normalized]
+    for key, val in FAMOUS_SONGWRITING_CREDITS.items():
+        if strip_accents(key) == normalized:
+            return val
     
     # Try partial match
-    for key in FAMOUS_SONGWRITING_CREDITS:
-        if key in normalized or normalized in key:
-            return FAMOUS_SONGWRITING_CREDITS[key]
-        # Also check without special characters
-        clean_key = key.replace("-", " ").replace("'", "")
+    for key, val in FAMOUS_SONGWRITING_CREDITS.items():
+        clean_key = strip_accents(key).replace("-", " ").replace("'", "")
         clean_name = normalized.replace("-", " ").replace("'", "")
         if clean_key in clean_name or clean_name in clean_key:
-            return FAMOUS_SONGWRITING_CREDITS[key]
+            return val
     
     return None
 
