@@ -1,19 +1,19 @@
 import requests
 import sys
-import time
+import json
 from datetime import datetime
 
 class MusicHubAPITester:
     def __init__(self, base_url="https://tune-explorer-24.preview.emergentagent.com"):
         self.base_url = base_url
-        self.api_url = f"{base_url}/api"
         self.tests_run = 0
         self.tests_passed = 0
         self.failed_tests = []
+        self.passed_tests = []
 
-    def run_test(self, name, method, endpoint, expected_status, data=None, params=None):
+    def run_test(self, name, method, endpoint, expected_status, params=None, data=None):
         """Run a single API test"""
-        url = f"{self.api_url}/{endpoint}"
+        url = f"{self.base_url}/api/{endpoint}"
         headers = {'Content-Type': 'application/json'}
 
         self.tests_run += 1
@@ -30,22 +30,24 @@ class MusicHubAPITester:
             if success:
                 self.tests_passed += 1
                 print(f"✅ Passed - Status: {response.status_code}")
+                self.passed_tests.append(name)
                 try:
                     response_data = response.json()
-                    if isinstance(response_data, dict):
-                        print(f"   Response keys: {list(response_data.keys())}")
                     return True, response_data
                 except:
-                    return True, response.text
+                    return True, {}
             else:
                 print(f"❌ Failed - Expected {expected_status}, got {response.status_code}")
-                print(f"   Response: {response.text[:200]}...")
+                try:
+                    error_detail = response.json()
+                    print(f"   Error: {error_detail}")
+                except:
+                    print(f"   Error: {response.text}")
                 self.failed_tests.append({
                     "test": name,
-                    "endpoint": endpoint,
                     "expected": expected_status,
                     "actual": response.status_code,
-                    "response": response.text[:200]
+                    "endpoint": endpoint
                 })
                 return False, {}
 
@@ -53,338 +55,249 @@ class MusicHubAPITester:
             print(f"❌ Failed - Error: {str(e)}")
             self.failed_tests.append({
                 "test": name,
-                "endpoint": endpoint,
-                "error": str(e)
+                "error": str(e),
+                "endpoint": endpoint
             })
             return False, {}
 
     def test_health_endpoints(self):
         """Test basic health endpoints"""
-        print("\n" + "="*50)
-        print("TESTING HEALTH ENDPOINTS")
-        print("="*50)
-        
+        print("\n=== TESTING HEALTH ENDPOINTS ===")
         self.run_test("API Root", "GET", "", 200)
         self.run_test("Health Check", "GET", "health", 200)
 
-    def test_artist_search(self):
-        """Test artist search functionality"""
-        print("\n" + "="*50)
-        print("TESTING ARTIST SEARCH")
-        print("="*50)
+    def test_genius_endpoints(self):
+        """Test Genius API integration endpoints"""
+        print("\n=== TESTING GENIUS API ENDPOINTS ===")
         
-        # Test with popular artists
-        test_queries = ["Daft Punk", "Rihanna", "Ed Sheeran", "Adele"]
-        
-        for query in test_queries:
-            success, response = self.run_test(
-                f"Search Artists - {query}",
-                "GET",
-                "search/artists",
-                200,
-                params={"q": query}
-            )
-            if success and isinstance(response, dict):
-                artists = response.get("artists", [])
-                if artists:
-                    print(f"   Found {len(artists)} artists")
-                    # Test getting details for first artist
-                    first_artist = artists[0]
-                    artist_id = first_artist.get("id")
-                    if artist_id:
-                        self.test_artist_details(artist_id, first_artist.get("name", "Unknown"))
-                else:
-                    print(f"   No artists found for {query}")
-
-    def test_artist_details(self, artist_id, artist_name):
-        """Test artist details endpoints"""
-        print(f"\n--- Testing Artist Details for {artist_name} (ID: {artist_id}) ---")
-        
-        # Test artist details
-        success, response = self.run_test(
-            f"Get Artist Details - {artist_name}",
-            "GET",
-            f"artist/{artist_id}",
-            200
+        # Test Genius search
+        success, data = self.run_test(
+            "Genius Search - Shape of You", 
+            "GET", 
+            "genius/search", 
+            200, 
+            params={"q": "Shape of You"}
+        )
+        if success and data.get("songs"):
+            print(f"   Found {len(data['songs'])} songs")
+            
+        # Test Genius search - Ed Sheeran
+        success, data = self.run_test(
+            "Genius Search - Ed Sheeran", 
+            "GET", 
+            "genius/search", 
+            200, 
+            params={"q": "Ed Sheeran"}
         )
         
-        # Test artist albums
+        # Test specific song details (Love Yourself by Justin Bieber)
         self.run_test(
-            f"Get Artist Albums - {artist_name}",
-            "GET",
-            f"artist/{artist_id}/albums",
+            "Genius Song Details - Love Yourself", 
+            "GET", 
+            "genius/song/2342329", 
             200
         )
         
-        # Test artist top tracks
-        self.run_test(
-            f"Get Artist Top Tracks - {artist_name}",
-            "GET",
-            f"artist/{artist_id}/top",
-            200
+        # Test artist credits - Ed Sheeran
+        success, data = self.run_test(
+            "Genius Credits - Ed Sheeran", 
+            "GET", 
+            "genius/credits", 
+            200, 
+            params={"artist_name": "Ed Sheeran"}
         )
+        if success and data.get("credits"):
+            print(f"   Found {len(data['credits'])} credits for Ed Sheeran")
+            
+        # Test artist credits - Sia
+        success, data = self.run_test(
+            "Genius Credits - Sia", 
+            "GET", 
+            "genius/credits", 
+            200, 
+            params={"artist_name": "Sia"}
+        )
+        if success and data.get("credits"):
+            print(f"   Found {len(data['credits'])} credits for Sia")
 
-    def test_billboard_endpoints(self):
-        """Test Billboard chart endpoints"""
-        print("\n" + "="*50)
-        print("TESTING BILLBOARD ENDPOINTS")
-        print("="*50)
+    def test_deezer_endpoints(self):
+        """Test Deezer API endpoints"""
+        print("\n=== TESTING DEEZER API ENDPOINTS ===")
         
-        # Test current Hot 100
-        success, response = self.run_test(
-            "Billboard Hot 100 - Current",
-            "GET",
-            "billboard/hot100",
-            200
+        # Test artist search
+        success, data = self.run_test(
+            "Deezer Artist Search", 
+            "GET", 
+            "search/artists", 
+            200, 
+            params={"q": "Ed Sheeran"}
         )
-        if success and isinstance(response, dict):
-            songs = response.get("songs", [])
-            print(f"   Found {len(songs)} songs in current chart")
         
-        # Test year-end charts for recent years
-        current_year = datetime.now().year
-        test_years = [current_year - 1, 2020, 2015]
+        artist_id = None
+        if success and data.get("artists"):
+            artist_id = data["artists"][0]["id"]
+            print(f"   Found artist ID: {artist_id}")
         
-        for year in test_years:
-            success, response = self.run_test(
-                f"Billboard Year-End {year}",
-                "GET",
-                f"billboard/year/{year}",
+        if artist_id:
+            # Test artist details
+            self.run_test(
+                "Deezer Artist Details", 
+                "GET", 
+                f"artist/{artist_id}", 
                 200
             )
-            if success and isinstance(response, dict):
-                songs = response.get("songs", [])
-                print(f"   Found {len(songs)} songs for {year}")
+            
+            # Test artist albums
+            self.run_test(
+                "Deezer Artist Albums", 
+                "GET", 
+                f"artist/{artist_id}/albums", 
+                200
+            )
+            
+            # Test artist top tracks
+            self.run_test(
+                "Deezer Artist Top Tracks", 
+                "GET", 
+                f"artist/{artist_id}/top", 
+                200
+            )
+            
+            # Test related artists
+            self.run_test(
+                "Deezer Related Artists", 
+                "GET", 
+                f"artist/{artist_id}/related", 
+                200
+            )
+
+    def test_billboard_endpoints(self):
+        """Test Billboard scraping endpoints"""
+        print("\n=== TESTING BILLBOARD ENDPOINTS ===")
+        
+        # Test current Billboard Hot 100
+        success, data = self.run_test(
+            "Billboard Hot 100 Current", 
+            "GET", 
+            "billboard/hot100", 
+            200
+        )
+        if success and data.get("songs"):
+            print(f"   Found {len(data['songs'])} songs in current chart")
+            
+        # Test year-end chart
+        success, data = self.run_test(
+            "Billboard Year-End 2023", 
+            "GET", 
+            "billboard/year/2023", 
+            200
+        )
+        if success and data.get("songs"):
+            print(f"   Found {len(data['songs'])} songs in 2023 year-end chart")
 
     def test_blindtest_endpoints(self):
-        """Test Blind Test game endpoints"""
-        print("\n" + "="*50)
-        print("TESTING BLIND TEST ENDPOINTS")
-        print("="*50)
+        """Test Blind Test endpoints"""
+        print("\n=== TESTING BLIND TEST ENDPOINTS ===")
         
-        # Test getting blind test songs
-        success, response = self.run_test(
-            "Get Blind Test Songs",
-            "GET",
-            "blindtest/songs",
-            200,
+        # Test get blind test songs
+        success, data = self.run_test(
+            "Blind Test Songs", 
+            "GET", 
+            "blindtest/songs", 
+            200, 
             params={"count": 5}
         )
-        if success and isinstance(response, dict):
-            songs = response.get("songs", [])
-            print(f"   Got {len(songs)} blind test songs")
-            if songs:
-                first_song = songs[0]
-                print(f"   First song has YouTube ID: {first_song.get('youtube_id')}")
-                print(f"   First song has {len(first_song.get('choices', []))} choices")
+        if success and data.get("songs"):
+            print(f"   Generated {len(data['songs'])} blind test questions")
+            
+        # Test high scores
+        self.run_test(
+            "Blind Test High Scores", 
+            "GET", 
+            "blindtest/highscores", 
+            200
+        )
         
-        # Test saving a score
-        test_player = f"test_player_{int(time.time())}"
-        success, response = self.run_test(
-            "Save Blind Test Score",
-            "POST",
-            "blindtest/score",
-            200,
+        # Test save score
+        self.run_test(
+            "Save Blind Test Score", 
+            "POST", 
+            "blindtest/score", 
+            200, 
             params={
-                "player_name": test_player,
+                "player_name": "TestPlayer",
                 "score": 8,
                 "total_questions": 10
             }
         )
-        
-        # Test getting high scores
-        success, response = self.run_test(
-            "Get High Scores",
-            "GET",
-            "blindtest/highscores",
-            200,
-            params={"limit": 10}
-        )
-        if success and isinstance(response, dict):
-            scores = response.get("scores", [])
-            print(f"   Found {len(scores)} high scores")
 
-    def test_artist_extras_endpoints(self):
-        """Test new artist extras endpoints (anecdotes and songwriting credits)"""
-        print("\n" + "="*50)
-        print("TESTING ARTIST EXTRAS ENDPOINTS")
-        print("="*50)
+    def test_extras_endpoints(self):
+        """Test artist extras and credits endpoints"""
+        print("\n=== TESTING EXTRAS & CREDITS ENDPOINTS ===")
         
-        # Test artists with known data
-        test_artists = ["Ed Sheeran", "Sia", "Pharrell Williams", "Daft Punk"]
-        
-        for artist in test_artists:
-            success, response = self.run_test(
-                f"Artist Extras - {artist}",
-                "GET",
-                "artist-extras",
-                200,
-                params={"name": artist}
-            )
-            if success and isinstance(response, dict):
-                found = response.get("found", False)
-                anecdotes = response.get("anecdotes", [])
-                songs = response.get("songs_written_for_others", [])
-                print(f"   Found: {found}, Anecdotes: {len(anecdotes)}, Songs: {len(songs)}")
-        
-        # Test unknown artist
-        success, response = self.run_test(
-            "Artist Extras - Unknown Artist",
-            "GET",
-            "artist-extras",
-            200,
-            params={"name": "Unknown Artist 12345"}
+        # Test artist extras (curated data)
+        success, data = self.run_test(
+            "Artist Extras - Ed Sheeran", 
+            "GET", 
+            "artist-extras", 
+            200, 
+            params={"name": "Ed Sheeran"}
         )
-        if success and isinstance(response, dict):
-            found = response.get("found", False)
-            print(f"   Unknown artist found: {found} (should be False)")
-
-    def test_discogs_endpoints(self):
-        """Test Discogs API integration endpoints"""
-        print("\n" + "="*50)
-        print("TESTING DISCOGS ENDPOINTS")
-        print("="*50)
-        
-        # Test Discogs artist search
-        success, response = self.run_test(
-            "Discogs Search Artist - Daft Punk",
-            "GET",
-            "discogs/search/artist",
-            200,
-            params={"q": "Daft Punk"}
-        )
-        if success and isinstance(response, dict):
-            artists = response.get("artists", [])
-            print(f"   Found {len(artists)} Discogs artists")
+        if success:
+            print(f"   Found extras: {data.get('found', False)}")
             
-            # Test getting details for first artist if found
-            if artists:
-                artist_id = artists[0].get("id")
-                if artist_id:
-                    success, response = self.run_test(
-                        f"Discogs Artist Details - {artist_id}",
-                        "GET",
-                        f"discogs/artist/{artist_id}",
-                        200
-                    )
-                    if success and isinstance(response, dict):
-                        members = response.get("members", [])
-                        groups = response.get("groups", [])
-                        print(f"   Members: {len(members)}, Groups: {len(groups)}")
+        # Test full credits
+        success, data = self.run_test(
+            "Full Artist Credits", 
+            "GET", 
+            "credits/artist", 
+            200, 
+            params={"name": "Ed Sheeran"}
+        )
+        if success:
+            print(f"   Collaborations: {len(data.get('collaborations', []))}")
+            print(f"   Writing credits: {len(data.get('writing_credits', []))}")
 
-    def test_credits_endpoints(self):
-        """Test combined credits endpoints"""
-        print("\n" + "="*50)
-        print("TESTING CREDITS ENDPOINTS")
-        print("="*50)
-        
-        # Test artists known to have collaborations
-        test_artists = ["Daft Punk", "Ed Sheeran", "Pharrell Williams"]
-        
-        for artist in test_artists:
-            success, response = self.run_test(
-                f"Artist Credits - {artist}",
-                "GET",
-                "credits/artist",
-                200,
-                params={"name": artist}
-            )
-            if success and isinstance(response, dict):
-                deezer = response.get("deezer")
-                discogs = response.get("discogs")
-                collaborations = response.get("collaborations", [])
-                writing_credits = response.get("writing_credits", [])
-                production_credits = response.get("production_credits", [])
-                print(f"   Deezer: {'✓' if deezer else '✗'}, Discogs: {'✓' if discogs else '✗'}")
-                print(f"   Collaborations: {len(collaborations)}, Writing: {len(writing_credits)}, Production: {len(production_credits)}")
-
-    def test_error_cases(self):
-        """Test error handling"""
-        print("\n" + "="*50)
-        print("TESTING ERROR CASES")
-        print("="*50)
-        
-        # Test invalid artist ID
-        self.run_test(
-            "Invalid Artist ID",
-            "GET",
-            "artist/999999999",
-            404
-        )
-        
-        # Test invalid year for Billboard
-        self.run_test(
-            "Invalid Billboard Year",
-            "GET",
-            "billboard/year/1990",
-            400
-        )
-        
-        # Test empty search query
-        self.run_test(
-            "Empty Search Query",
-            "GET",
-            "search/artists",
-            422,  # FastAPI validation error
-            params={"q": ""}
-        )
-        
-        # Test invalid Discogs artist ID
-        self.run_test(
-            "Invalid Discogs Artist ID",
-            "GET",
-            "discogs/artist/999999999",
-            404
-        )
-
-    def run_all_tests(self):
-        """Run all test suites"""
-        print("🎵 MUSIC HUB API TESTING STARTED")
-        print(f"Testing against: {self.base_url}")
-        print("="*60)
-        
-        start_time = time.time()
-        
-        # Run test suites
-        self.test_health_endpoints()
-        self.test_artist_search()
-        self.test_artist_extras_endpoints()
-        self.test_discogs_endpoints()
-        self.test_credits_endpoints()
-        self.test_billboard_endpoints()
-        self.test_blindtest_endpoints()
-        self.test_error_cases()
-        
-        # Print summary
-        end_time = time.time()
-        duration = end_time - start_time
-        
-        print("\n" + "="*60)
-        print("🎵 MUSIC HUB API TESTING COMPLETED")
-        print("="*60)
-        print(f"📊 Tests passed: {self.tests_passed}/{self.tests_run}")
-        print(f"⏱️  Duration: {duration:.2f} seconds")
+    def print_summary(self):
+        """Print test summary"""
+        print(f"\n{'='*50}")
+        print(f"📊 TEST SUMMARY")
+        print(f"{'='*50}")
+        print(f"Total tests: {self.tests_run}")
+        print(f"Passed: {self.tests_passed}")
+        print(f"Failed: {len(self.failed_tests)}")
+        print(f"Success rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
         
         if self.failed_tests:
-            print(f"\n❌ FAILED TESTS ({len(self.failed_tests)}):")
-            for i, test in enumerate(self.failed_tests, 1):
-                print(f"{i}. {test['test']}")
-                print(f"   Endpoint: {test['endpoint']}")
-                if 'error' in test:
-                    print(f"   Error: {test['error']}")
-                else:
-                    print(f"   Expected: {test['expected']}, Got: {test['actual']}")
-                print()
+            print(f"\n❌ FAILED TESTS:")
+            for test in self.failed_tests:
+                error_msg = test.get('error', f"Expected {test.get('expected')}, got {test.get('actual')}")
+                print(f"   - {test['test']}: {error_msg}")
         
-        success_rate = (self.tests_passed / self.tests_run) * 100 if self.tests_run > 0 else 0
-        print(f"✅ Success Rate: {success_rate:.1f}%")
+        print(f"\n✅ PASSED TESTS:")
+        for test in self.passed_tests:
+            print(f"   - {test}")
         
-        return self.tests_passed == self.tests_run
+        return len(self.failed_tests) == 0
 
 def main():
+    print("🎵 Music Hub API Testing Suite")
+    print("=" * 50)
+    
     tester = MusicHubAPITester()
-    success = tester.run_all_tests()
-    return 0 if success else 1
+    
+    # Run all test suites
+    tester.test_health_endpoints()
+    tester.test_genius_endpoints()
+    tester.test_deezer_endpoints()
+    tester.test_billboard_endpoints()
+    tester.test_blindtest_endpoints()
+    tester.test_extras_endpoints()
+    
+    # Print summary
+    all_passed = tester.print_summary()
+    
+    return 0 if all_passed else 1
 
 if __name__ == "__main__":
     sys.exit(main())

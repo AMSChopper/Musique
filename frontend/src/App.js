@@ -432,6 +432,7 @@ const ArtistPage = () => {
   const [relatedArtists, setRelatedArtists] = useState([]);
   const [credits, setCredits] = useState(null);
   const [extras, setExtras] = useState(null);
+  const [geniusCredits, setGeniusCredits] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -452,7 +453,7 @@ const ArtistPage = () => {
         setTopTracks(tracksRes.data.tracks || []);
         setRelatedArtists(relatedRes.data.related || []);
         
-        // Fetch Discogs credits + curated extras using artist name
+        // Fetch Discogs credits + curated extras
         if (artistRes.data.name) {
           try {
             const [creditsRes, extrasRes] = await Promise.all([
@@ -475,6 +476,22 @@ const ArtistPage = () => {
 
     fetchArtistData();
   }, [artistId]);
+
+  // Fetch Genius credits separately (non-blocking, loads in background)
+  useEffect(() => {
+    if (!artist?.name) return;
+    const fetchGenius = async () => {
+      try {
+        const geniusRes = await axios.get(`${API}/genius/credits`, {
+          params: { artist_name: artist.name }
+        });
+        setGeniusCredits(geniusRes.data);
+      } catch (e) {
+        console.log("Could not fetch Genius credits:", e);
+      }
+    };
+    fetchGenius();
+  }, [artist?.name]);
 
   const formatDuration = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -637,6 +654,83 @@ const ArtistPage = () => {
         {/* Songs Written For Others - Ghostwriting Section */}
         {extras?.songs_written_for_others?.length > 0 && (
           <GhostwritingSection artist={artist} songs={extras.songs_written_for_others} />
+        )}
+
+        {/* Genius Credits Section */}
+        {geniusCredits?.credits?.length > 0 && (
+          <div className="mt-16" data-testid="genius-credits-section">
+            <h2 className="text-2xl font-bold mb-2 flex items-center gap-3">
+              <Music className="w-7 h-7 text-[#ffff64]" />
+              Crédits vérifiés
+              <span className="text-xs bg-[#ffff64]/20 text-[#ffff64] px-3 py-1 rounded-full font-medium">via Genius</span>
+            </h2>
+            <p className="text-[#B3B3B3] text-sm mb-6">
+              Auteurs et producteurs des chansons de {artist.name}
+            </p>
+            
+            <div className="space-y-2">
+              {geniusCredits.credits.map((song, index) => (
+                <div 
+                  key={song.id}
+                  className="flex items-start gap-4 p-4 bg-[#181818] rounded-xl border border-[#282828] hover:bg-[#1e1e1e] transition-all animate-fadeIn"
+                  style={{ animationDelay: `${index * 0.04}s` }}
+                  data-testid={`genius-credit-${song.id}`}
+                >
+                  {song.thumbnail && (
+                    <img 
+                      src={song.thumbnail} 
+                      alt={song.title}
+                      className="w-14 h-14 rounded-lg object-cover shrink-0"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-white truncate">{song.title}</p>
+                    <p className="text-sm text-[#B3B3B3]">
+                      {song.primary_artist}
+                      {song.release_date && <span className="text-[#7A7A7A] ml-2">· {song.release_date}</span>}
+                    </p>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+                      {song.writers?.length > 0 && (
+                        <div className="flex items-center gap-1 text-xs">
+                          <Pen className="w-3 h-3 text-[#f1c40f]" />
+                          <span className="text-[#7A7A7A]">Auteurs:</span>
+                          {song.writers.map((w, i) => (
+                            <span key={i}>
+                              <ClickableArtistName name={w} className="text-xs" />
+                              {i < song.writers.length - 1 && <span className="text-[#7A7A7A]">, </span>}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {song.producers?.length > 0 && (
+                        <div className="flex items-center gap-1 text-xs">
+                          <Disc className="w-3 h-3 text-[#e74c3c]" />
+                          <span className="text-[#7A7A7A]">Prod:</span>
+                          {song.producers.map((p, i) => (
+                            <span key={i}>
+                              <ClickableArtistName name={p} className="text-xs" />
+                              {i < song.producers.length - 1 && <span className="text-[#7A7A7A]">, </span>}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {song.url && (
+                    <a
+                      href={song.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-[#ffff64] hover:underline shrink-0 mt-1"
+                      data-testid={`genius-link-${song.id}`}
+                    >
+                      Genius
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Collaborations & Connexions Section */}

@@ -25,6 +25,9 @@ db = client[os.environ['DB_NAME']]
 # Discogs API token
 DISCOGS_TOKEN = os.environ.get('DISCOGS_TOKEN', '')
 
+# Genius API token
+GENIUS_TOKEN = os.environ.get('GENIUS_TOKEN', '')
+
 # Create the main app
 app = FastAPI()
 
@@ -308,6 +311,228 @@ async def get_artist_extras(name: str = Query(..., min_length=1)):
         "anecdotes": [],
         "songs_written_for_others": []
     }
+
+# ==================== GENIUS API ENDPOINTS ====================
+
+GENIUS_API = "https://api.genius.com"
+GENIUS_HEADERS = {
+    "Authorization": f"Bearer {GENIUS_TOKEN}" if GENIUS_TOKEN else ""
+}
+
+@api_router.get("/genius/search")
+async def genius_search(q: str = Query(..., min_length=1)):
+    """Search songs on Genius"""
+    if not GENIUS_TOKEN:
+        raise HTTPException(status_code=500, detail="Genius API token not configured")
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{GENIUS_API}/search",
+                params={"q": q, "per_page": 10},
+                headers=GENIUS_HEADERS,
+                timeout=15.0
+            )
+            data = response.json()
+            
+            songs = []
+            for hit in data.get("response", {}).get("hits", []):
+                song = hit.get("result", {})
+                songs.append({
+                    "id": song.get("id"),
+                    "title": song.get("title"),
+                    "full_title": song.get("full_title"),
+                    "artist": song.get("primary_artist", {}).get("name"),
+                    "artist_id": song.get("primary_artist", {}).get("id"),
+                    "url": song.get("url"),
+                    "thumbnail": song.get("song_art_image_thumbnail_url"),
+                    "page_views": song.get("stats", {}).get("pageviews")
+                })
+            
+            return {"songs": songs}
+    except httpx.RequestError as e:
+        logger.error(f"Genius API error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to search Genius")
+
+@api_router.get("/genius/song/{song_id}")
+async def genius_song_details(song_id: int):
+    """Get full song details from Genius including credits"""
+    if not GENIUS_TOKEN:
+        raise HTTPException(status_code=500, detail="Genius API token not configured")
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{GENIUS_API}/songs/{song_id}",
+                headers=GENIUS_HEADERS,
+                timeout=15.0
+            )
+            data = response.json()
+            song = data.get("response", {}).get("song", {})
+            
+            if not song:
+                raise HTTPException(status_code=404, detail="Song not found")
+            
+            # Extract writer artists
+            writers = []
+            for wa in song.get("writer_artists", []):
+                writers.append({
+                    "id": wa.get("id"),
+                    "name": wa.get("name"),
+                    "image": wa.get("image_url")
+                })
+            
+            # Extract producer artists
+            producers = []
+            for cp in song.get("custom_performances", []):
+                if "producer" in cp.get("label", "").lower():
+                    for artist in cp.get("artists", []):
+                        producers.append({
+                            "id": artist.get("id"),
+                            "name": artist.get("name"),
+                            "image": artist.get("image_url")
+                        })
+            
+            # Also check producer_artists field
+            for pa in song.get("producer_artists", []):
+                if not any(p["id"] == pa.get("id") for p in producers):
+                    producers.append({
+                        "id": pa.get("id"),
+                        "name": pa.get("name"),
+                        "image": pa.get("image_url")
+                    })
+            
+            return {
+                "id": song.get("id"),
+                "title": song.get("title"),
+                "full_title": song.get("full_title"),
+                "artist": song.get("primary_artist", {}).get("name"),
+                "artist_id": song.get("primary_artist", {}).get("id"),
+                "album": song.get("album", {}).get("name") if song.get("album") else None,
+                "release_date": song.get("release_date_for_display"),
+                "url": song.get("url"),
+                "thumbnail": song.get("song_art_image_thumbnail_url"),
+                "image": song.get("song_art_image_url"),
+                "writers": writers,
+                "producers": producers,
+                "description": song.get("description", {}).get("plain") if isinstance(song.get("description"), dict) else None
+            }
+    except httpx.RequestError as e:
+        logger.error(f"Genius API error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get song details")
+
+@api_router.get("/genius/artist/{artist_id}/songs")
+async def genius_artist_songs(artist_id: int, per_page: int = 20, sort: str = "popularity"):
+    """Get artist's songs from Genius with credits"""
+    if not GENIUS_TOKEN:
+        raise HTTPException(status_code=500, detail="Genius API token not configured")
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{GENIUS_API}/artists/{artist_id}/songs",
+                params={"per_page": per_page, "sort": sort},
+                headers=GENIUS_HEADERS,
+                timeout=15.0
+            )
+            data = response.json()
+            
+            songs = []
+            for song in data.get("response", {}).get("songs", []):
+                songs.append({
+                    "id": song.get("id"),
+                    "title": song.get("title"),
+                    "full_title": song.get("full_title"),
+                    "url": song.get("url"),
+                    "thumbnail": song.get("song_art_image_thumbnail_url"),
+                    "page_views": song.get("stats", {}).get("pageviews")
+                })
+            
+            return {"songs": songs, "artist_id": artist_id}
+    except httpx.RequestError as e:
+        logger.error(f"Genius API error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get artist songs")
+
+@api_router.get("/genius/credits")
+async def genius_get_credits(artist_name: str = Query(..., min_length=1)):
+    """Get songwriter/producer credits for an artist from Genius - 
+    finds songs where this artist is credited as writer/producer"""
+    if not GENIUS_TOKEN:
+        raise HTTPException(status_code=500, detail="Genius API token not configured")
+    try:
+        async with httpx.AsyncClient() as client:
+            # Search for the artist's most popular songs
+            search_response = await client.get(
+                f"{GENIUS_API}/search",
+                params={"q": artist_name, "per_page": 15},
+                headers=GENIUS_HEADERS,
+                timeout=15.0
+            )
+            search_data = search_response.json()
+            hits = search_data.get("response", {}).get("hits", [])
+            
+            if not hits:
+                return {"artist_name": artist_name, "credits": [], "written_for": []}
+            
+            # Get detailed info for top songs to find credits
+            credits_info = []
+            written_for_others = []
+            
+            for hit in hits[:8]:
+                song = hit.get("result", {})
+                song_id = song.get("id")
+                primary_artist = song.get("primary_artist", {}).get("name", "")
+                
+                if not song_id:
+                    continue
+                
+                # Get full song details with credits
+                try:
+                    detail_response = await client.get(
+                        f"{GENIUS_API}/songs/{song_id}",
+                        headers=GENIUS_HEADERS,
+                        timeout=10.0
+                    )
+                    detail_data = detail_response.json()
+                    song_detail = detail_data.get("response", {}).get("song", {})
+                    
+                    if not song_detail:
+                        continue
+                    
+                    # Get writers
+                    writers = [w.get("name") for w in song_detail.get("writer_artists", [])]
+                    producers = [p.get("name") for p in song_detail.get("producer_artists", [])]
+                    
+                    song_info = {
+                        "id": song_id,
+                        "title": song_detail.get("title"),
+                        "full_title": song_detail.get("full_title"),
+                        "primary_artist": primary_artist,
+                        "album": song_detail.get("album", {}).get("name") if song_detail.get("album") else None,
+                        "release_date": song_detail.get("release_date_for_display"),
+                        "thumbnail": song_detail.get("song_art_image_thumbnail_url"),
+                        "url": song_detail.get("url"),
+                        "writers": writers,
+                        "producers": producers
+                    }
+                    
+                    credits_info.append(song_info)
+                    
+                    # Check if artist wrote for someone else
+                    artist_lower = artist_name.lower()
+                    if any(artist_lower in w.lower() for w in writers):
+                        if artist_lower not in primary_artist.lower():
+                            written_for_others.append(song_info)
+                    
+                except Exception as e:
+                    logger.warning(f"Error getting song {song_id}: {e}")
+                    continue
+            
+            return {
+                "artist_name": artist_name,
+                "credits": credits_info,
+                "written_for": written_for_others
+            }
+    except httpx.RequestError as e:
+        logger.error(f"Genius API error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get credits from Genius")
 
 @api_router.get("/discogs/search/artist")
 async def search_discogs_artist(q: str = Query(..., min_length=1)):
