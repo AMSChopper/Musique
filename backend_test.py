@@ -204,6 +204,100 @@ class MusicHubAPITester:
             scores = response.get("scores", [])
             print(f"   Found {len(scores)} high scores")
 
+    def test_artist_extras_endpoints(self):
+        """Test new artist extras endpoints (anecdotes and songwriting credits)"""
+        print("\n" + "="*50)
+        print("TESTING ARTIST EXTRAS ENDPOINTS")
+        print("="*50)
+        
+        # Test artists with known data
+        test_artists = ["Ed Sheeran", "Sia", "Pharrell Williams", "Daft Punk"]
+        
+        for artist in test_artists:
+            success, response = self.run_test(
+                f"Artist Extras - {artist}",
+                "GET",
+                "artist-extras",
+                200,
+                params={"name": artist}
+            )
+            if success and isinstance(response, dict):
+                found = response.get("found", False)
+                anecdotes = response.get("anecdotes", [])
+                songs = response.get("songs_written_for_others", [])
+                print(f"   Found: {found}, Anecdotes: {len(anecdotes)}, Songs: {len(songs)}")
+        
+        # Test unknown artist
+        success, response = self.run_test(
+            "Artist Extras - Unknown Artist",
+            "GET",
+            "artist-extras",
+            200,
+            params={"name": "Unknown Artist 12345"}
+        )
+        if success and isinstance(response, dict):
+            found = response.get("found", False)
+            print(f"   Unknown artist found: {found} (should be False)")
+
+    def test_discogs_endpoints(self):
+        """Test Discogs API integration endpoints"""
+        print("\n" + "="*50)
+        print("TESTING DISCOGS ENDPOINTS")
+        print("="*50)
+        
+        # Test Discogs artist search
+        success, response = self.run_test(
+            "Discogs Search Artist - Daft Punk",
+            "GET",
+            "discogs/search/artist",
+            200,
+            params={"q": "Daft Punk"}
+        )
+        if success and isinstance(response, dict):
+            artists = response.get("artists", [])
+            print(f"   Found {len(artists)} Discogs artists")
+            
+            # Test getting details for first artist if found
+            if artists:
+                artist_id = artists[0].get("id")
+                if artist_id:
+                    success, response = self.run_test(
+                        f"Discogs Artist Details - {artist_id}",
+                        "GET",
+                        f"discogs/artist/{artist_id}",
+                        200
+                    )
+                    if success and isinstance(response, dict):
+                        members = response.get("members", [])
+                        groups = response.get("groups", [])
+                        print(f"   Members: {len(members)}, Groups: {len(groups)}")
+
+    def test_credits_endpoints(self):
+        """Test combined credits endpoints"""
+        print("\n" + "="*50)
+        print("TESTING CREDITS ENDPOINTS")
+        print("="*50)
+        
+        # Test artists known to have collaborations
+        test_artists = ["Daft Punk", "Ed Sheeran", "Pharrell Williams"]
+        
+        for artist in test_artists:
+            success, response = self.run_test(
+                f"Artist Credits - {artist}",
+                "GET",
+                "credits/artist",
+                200,
+                params={"name": artist}
+            )
+            if success and isinstance(response, dict):
+                deezer = response.get("deezer")
+                discogs = response.get("discogs")
+                collaborations = response.get("collaborations", [])
+                writing_credits = response.get("writing_credits", [])
+                production_credits = response.get("production_credits", [])
+                print(f"   Deezer: {'✓' if deezer else '✗'}, Discogs: {'✓' if discogs else '✗'}")
+                print(f"   Collaborations: {len(collaborations)}, Writing: {len(writing_credits)}, Production: {len(production_credits)}")
+
     def test_error_cases(self):
         """Test error handling"""
         print("\n" + "="*50)
@@ -234,6 +328,14 @@ class MusicHubAPITester:
             422,  # FastAPI validation error
             params={"q": ""}
         )
+        
+        # Test invalid Discogs artist ID
+        self.run_test(
+            "Invalid Discogs Artist ID",
+            "GET",
+            "discogs/artist/999999999",
+            404
+        )
 
     def run_all_tests(self):
         """Run all test suites"""
@@ -246,6 +348,9 @@ class MusicHubAPITester:
         # Run test suites
         self.test_health_endpoints()
         self.test_artist_search()
+        self.test_artist_extras_endpoints()
+        self.test_discogs_endpoints()
+        self.test_credits_endpoints()
         self.test_billboard_endpoints()
         self.test_blindtest_endpoints()
         self.test_error_cases()
