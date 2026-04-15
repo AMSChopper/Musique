@@ -21,6 +21,9 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+# Discogs API token
+DISCOGS_TOKEN = os.environ.get('DISCOGS_TOKEN', '')
+
 # Create the main app
 app = FastAPI()
 
@@ -249,6 +252,343 @@ async def get_artist_related(artist_id: int, limit: int = 10):
     except httpx.RequestError as e:
         logger.error(f"Deezer API error: {e}")
         raise HTTPException(status_code=500, detail="Failed to get related artists")
+
+# ==================== DISCOGS API ENDPOINTS ====================
+
+DISCOGS_API = "https://api.discogs.com"
+DISCOGS_HEADERS = {
+    "User-Agent": "MusicHub/1.0",
+    "Authorization": f"Discogs token={DISCOGS_TOKEN}" if DISCOGS_TOKEN else ""
+}
+
+@api_router.get("/discogs/search/artist")
+async def search_discogs_artist(q: str = Query(..., min_length=1)):
+    """Search artist on Discogs"""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{DISCOGS_API}/database/search",
+                params={"q": q, "type": "artist", "per_page": 10},
+                headers=DISCOGS_HEADERS,
+                timeout=15.0
+            )
+            data = response.json()
+            
+            artists = []
+            for item in data.get("results", []):
+                artists.append({
+                    "id": item.get("id"),
+                    "name": item.get("title"),
+                    "thumb": item.get("thumb"),
+                    "cover_image": item.get("cover_image"),
+                    "resource_url": item.get("resource_url")
+                })
+            
+            return {"artists": artists}
+    except httpx.RequestError as e:
+        logger.error(f"Discogs API error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to search Discogs")
+
+@api_router.get("/discogs/artist/{artist_id}")
+async def get_discogs_artist(artist_id: int):
+    """Get detailed artist info from Discogs including members and groups"""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{DISCOGS_API}/artists/{artist_id}",
+                headers=DISCOGS_HEADERS,
+                timeout=15.0
+            )
+            data = response.json()
+            
+            if "message" in data:
+                raise HTTPException(status_code=404, detail="Artist not found on Discogs")
+            
+            # Extract members (for bands) or groups (for solo artists)
+            members = []
+            for member in data.get("members", []):
+                members.append({
+                    "id": member.get("id"),
+                    "name": member.get("name"),
+                    "active": member.get("active", True),
+                    "thumbnail_url": member.get("thumbnail_url")
+                })
+            
+            groups = []
+            for group in data.get("groups", []):
+                groups.append({
+                    "id": group.get("id"),
+                    "name": group.get("name"),
+                    "active": group.get("active", True),
+                    "thumbnail_url": group.get("thumbnail_url")
+                })
+            
+            # Extract aliases
+            aliases = []
+            for alias in data.get("aliases", []):
+                aliases.append({
+                    "id": alias.get("id"),
+                    "name": alias.get("name")
+                })
+            
+            return {
+                "id": data.get("id"),
+                "name": data.get("name"),
+                "profile": data.get("profile", ""),
+                "images": data.get("images", []),
+                "members": members,
+                "groups": groups,
+                "aliases": aliases,
+                "urls": data.get("urls", []),
+                "namevariations": data.get("namevariations", [])
+            }
+    except httpx.RequestError as e:
+        logger.error(f"Discogs API error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get Discogs artist")
+
+@api_router.get("/discogs/artist/{artist_id}/releases")
+async def get_discogs_artist_releases(artist_id: int, page: int = 1, per_page: int = 20):
+    """Get artist releases with credit information from Discogs"""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{DISCOGS_API}/artists/{artist_id}/releases",
+                params={"page": page, "per_page": per_page, "sort": "year", "sort_order": "desc"},
+                headers=DISCOGS_HEADERS,
+                timeout=15.0
+            )
+            data = response.json()
+            
+            releases = []
+            for item in data.get("releases", []):
+                # Get role information (collaboration type)
+                role = item.get("role", "Main")
+                
+                releases.append({
+                    "id": item.get("id"),
+                    "title": item.get("title"),
+                    "year": item.get("year"),
+                    "type": item.get("type"),
+                    "role": role,
+                    "artist": item.get("artist"),
+                    "thumb": item.get("thumb"),
+                    "resource_url": item.get("resource_url"),
+                    "format": item.get("format")
+                })
+            
+            return {
+                "releases": releases,
+                "pagination": data.get("pagination", {})
+            }
+    except httpx.RequestError as e:
+        logger.error(f"Discogs API error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get Discogs releases")
+
+@api_router.get("/discogs/release/{release_id}/credits")
+async def get_discogs_release_credits(release_id: int):
+    """Get detailed credits for a specific release from Discogs"""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{DISCOGS_API}/releases/{release_id}",
+                headers=DISCOGS_HEADERS,
+                timeout=15.0
+            )
+            data = response.json()
+            
+            if "message" in data:
+                raise HTTPException(status_code=404, detail="Release not found")
+            
+            # Extract artists (main)
+            artists = []
+            for artist in data.get("artists", []):
+                artists.append({
+                    "id": artist.get("id"),
+                    "name": artist.get("name"),
+                    "role": "Main Artist"
+                })
+            
+            # Extract extra artists (collaborators, producers, writers, etc.)
+            extra_artists = []
+            for extra in data.get("extraartists", []):
+                extra_artists.append({
+                    "id": extra.get("id"),
+                    "name": extra.get("name"),
+                    "role": extra.get("role", "Unknown"),
+                    "tracks": extra.get("tracks", "")
+                })
+            
+            # Group credits by role
+            credits_by_role = {}
+            for ea in extra_artists:
+                role = ea["role"]
+                if role not in credits_by_role:
+                    credits_by_role[role] = []
+                credits_by_role[role].append(ea)
+            
+            # Extract tracklist with credits
+            tracklist = []
+            for track in data.get("tracklist", []):
+                track_artists = []
+                for ta in track.get("artists", []):
+                    track_artists.append({
+                        "id": ta.get("id"),
+                        "name": ta.get("name")
+                    })
+                for tea in track.get("extraartists", []):
+                    track_artists.append({
+                        "id": tea.get("id"),
+                        "name": tea.get("name"),
+                        "role": tea.get("role")
+                    })
+                
+                tracklist.append({
+                    "position": track.get("position"),
+                    "title": track.get("title"),
+                    "duration": track.get("duration"),
+                    "artists": track_artists
+                })
+            
+            return {
+                "id": data.get("id"),
+                "title": data.get("title"),
+                "year": data.get("year"),
+                "genres": data.get("genres", []),
+                "styles": data.get("styles", []),
+                "artists": artists,
+                "extra_artists": extra_artists,
+                "credits_by_role": credits_by_role,
+                "tracklist": tracklist,
+                "images": data.get("images", []),
+                "labels": data.get("labels", [])
+            }
+    except httpx.RequestError as e:
+        logger.error(f"Discogs API error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get release credits")
+
+@api_router.get("/credits/artist")
+async def get_artist_full_credits(name: str = Query(..., min_length=1)):
+    """Get comprehensive artist credits combining Deezer and Discogs data"""
+    try:
+        result = {
+            "artist_name": name,
+            "deezer": None,
+            "discogs": None,
+            "collaborations": [],
+            "writing_credits": [],
+            "production_credits": []
+        }
+        
+        async with httpx.AsyncClient() as client:
+            # Search on Deezer first
+            deezer_response = await client.get(
+                f"{DEEZER_API}/search/artist",
+                params={"q": name, "limit": 1}
+            )
+            deezer_data = deezer_response.json()
+            
+            if deezer_data.get("data"):
+                deezer_artist = deezer_data["data"][0]
+                result["deezer"] = {
+                    "id": deezer_artist.get("id"),
+                    "name": deezer_artist.get("name"),
+                    "picture": deezer_artist.get("picture_medium"),
+                    "nb_fan": deezer_artist.get("nb_fan")
+                }
+            
+            # Search on Discogs
+            discogs_response = await client.get(
+                f"{DISCOGS_API}/database/search",
+                params={"q": name, "type": "artist", "per_page": 1},
+                headers=DISCOGS_HEADERS,
+                timeout=15.0
+            )
+            discogs_search = discogs_response.json()
+            
+            if discogs_search.get("results"):
+                discogs_artist_id = discogs_search["results"][0]["id"]
+                
+                # Get full artist info
+                artist_response = await client.get(
+                    f"{DISCOGS_API}/artists/{discogs_artist_id}",
+                    headers=DISCOGS_HEADERS,
+                    timeout=15.0
+                )
+                discogs_artist = artist_response.json()
+                
+                result["discogs"] = {
+                    "id": discogs_artist.get("id"),
+                    "name": discogs_artist.get("name"),
+                    "profile": discogs_artist.get("profile", "")[:500],
+                    "images": discogs_artist.get("images", [])[:3]
+                }
+                
+                # Get members/groups for collaborations
+                for member in discogs_artist.get("members", []):
+                    result["collaborations"].append({
+                        "type": "member",
+                        "id": member.get("id"),
+                        "name": member.get("name"),
+                        "active": member.get("active", True),
+                        "thumbnail": member.get("thumbnail_url")
+                    })
+                
+                for group in discogs_artist.get("groups", []):
+                    result["collaborations"].append({
+                        "type": "group",
+                        "id": group.get("id"),
+                        "name": group.get("name"),
+                        "active": group.get("active", True),
+                        "thumbnail": group.get("thumbnail_url")
+                    })
+                
+                # Get releases to find writing/production credits
+                releases_response = await client.get(
+                    f"{DISCOGS_API}/artists/{discogs_artist_id}/releases",
+                    params={"per_page": 50, "sort": "year", "sort_order": "desc"},
+                    headers=DISCOGS_HEADERS,
+                    timeout=15.0
+                )
+                releases_data = releases_response.json()
+                
+                # Identify writing credits (where role contains "Written" or "Songwriter")
+                writing_roles = ["Written-By", "Songwriter", "Lyrics By", "Music By", "Composed By"]
+                production_roles = ["Producer", "Produced By", "Executive Producer", "Co-Producer"]
+                
+                for release in releases_data.get("releases", [])[:30]:
+                    role = release.get("role", "Main")
+                    
+                    # Check if this is a writing credit
+                    for wr in writing_roles:
+                        if wr.lower() in role.lower():
+                            result["writing_credits"].append({
+                                "release_id": release.get("id"),
+                                "title": release.get("title"),
+                                "artist": release.get("artist"),
+                                "year": release.get("year"),
+                                "role": role,
+                                "thumb": release.get("thumb")
+                            })
+                            break
+                    
+                    # Check if this is a production credit
+                    for pr in production_roles:
+                        if pr.lower() in role.lower():
+                            result["production_credits"].append({
+                                "release_id": release.get("id"),
+                                "title": release.get("title"),
+                                "artist": release.get("artist"),
+                                "year": release.get("year"),
+                                "role": role,
+                                "thumb": release.get("thumb")
+                            })
+                            break
+        
+        return result
+        
+    except httpx.RequestError as e:
+        logger.error(f"Credits API error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get artist credits")
 
 # ==================== BILLBOARD SCRAPING ====================
 

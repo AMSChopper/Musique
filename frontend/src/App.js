@@ -226,6 +226,7 @@ const ArtistPage = () => {
   const [albums, setAlbums] = useState([]);
   const [topTracks, setTopTracks] = useState([]);
   const [relatedArtists, setRelatedArtists] = useState([]);
+  const [credits, setCredits] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -245,6 +246,18 @@ const ArtistPage = () => {
         setAlbums(albumsRes.data.albums || []);
         setTopTracks(tracksRes.data.tracks || []);
         setRelatedArtists(relatedRes.data.related || []);
+        
+        // Fetch Discogs credits using artist name
+        if (artistRes.data.name) {
+          try {
+            const creditsRes = await axios.get(`${API}/credits/artist`, {
+              params: { name: artistRes.data.name }
+            });
+            setCredits(creditsRes.data);
+          } catch (e) {
+            console.log("Could not fetch Discogs credits:", e);
+          }
+        }
       } catch (err) {
         console.error("Error fetching artist:", err);
         setError("Impossible de charger les données de l'artiste");
@@ -397,45 +410,172 @@ const ArtistPage = () => {
         </div>
 
         {/* Collaborations & Connexions Section */}
-        {relatedArtists.length > 0 && (
+        {(relatedArtists.length > 0 || credits?.collaborations?.length > 0) && (
           <div className="mt-16" data-testid="collaborations-section">
             <h2 className="text-2xl font-bold mb-2">Collaborations & Connexions</h2>
             <p className="text-[#B3B3B3] text-sm mb-6">Artistes liés et collaborateurs</p>
             
-            <div className="collab-grid">
-              {relatedArtists.slice(0, 10).map((related, index) => (
-                <div 
-                  key={related.id}
-                  className="collab-item animate-fadeIn"
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                  onClick={() => navigate(`/artist/${related.id}`)}
-                  data-testid={`collab-${related.id}`}
-                >
-                  {/* Random ghostwriter badge for demo - in real app this would come from data */}
-                  {index === 2 && (
-                    <span className="ghost-writer-badge">
-                      <Pen className="w-3 h-3 inline mr-1" />
-                      PLUME
-                    </span>
-                  )}
-                  <div className={`collab-circle ${index === 2 ? 'ghostwriter' : ''}`}>
-                    {related.picture_medium ? (
-                      <img 
-                        src={related.picture_medium} 
-                        alt={related.name}
-                        onError={(e) => { 
-                          e.target.style.display = 'none';
-                          e.target.parentNode.innerText = related.initials;
-                        }}
-                      />
-                    ) : (
-                      related.initials
-                    )}
-                  </div>
-                  <span className="collab-name">{related.name}</span>
+            {/* Discogs Real Collaborations - Members/Groups */}
+            {credits?.collaborations?.length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold text-[#1db954] mb-4 flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  {credits.collaborations.some(c => c.type === 'member') ? 'Membres du groupe' : 'Groupes & Projets'}
+                </h3>
+                <div className="collab-grid">
+                  {credits.collaborations.slice(0, 8).map((collab, index) => {
+                    const nameParts = collab.name.split(' ');
+                    const initials = nameParts.length >= 2 
+                      ? nameParts[0][0] + '.' + nameParts[nameParts.length - 1][0]
+                      : collab.name.slice(0, 2).toUpperCase();
+                    
+                    return (
+                      <div 
+                        key={collab.id}
+                        className="collab-item animate-fadeIn"
+                        style={{ animationDelay: `${index * 0.05}s` }}
+                        data-testid={`discogs-collab-${collab.id}`}
+                      >
+                        <span className={`text-xs px-2 py-1 rounded-full mb-2 ${
+                          collab.type === 'member' ? 'bg-[#1db954]/20 text-[#1db954]' : 'bg-purple-500/20 text-purple-400'
+                        }`}>
+                          {collab.type === 'member' ? 'Membre' : 'Groupe'}
+                        </span>
+                        <div className="collab-circle">
+                          {collab.thumbnail ? (
+                            <img 
+                              src={collab.thumbnail} 
+                              alt={collab.name}
+                              onError={(e) => { 
+                                e.target.style.display = 'none';
+                                e.target.parentNode.innerText = initials;
+                              }}
+                            />
+                          ) : (
+                            initials
+                          )}
+                        </div>
+                        <span className="collab-name">{collab.name}</span>
+                        {!collab.active && (
+                          <span className="text-xs text-[#7A7A7A]">(ancien)</span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
+
+            {/* Writing Credits from Discogs */}
+            {credits?.writing_credits?.length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold text-[#f1c40f] mb-4 flex items-center gap-2">
+                  <Pen className="w-5 h-5" />
+                  Crédits d'écriture (Ghostwriting)
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {credits.writing_credits.slice(0, 6).map((credit, index) => (
+                    <div 
+                      key={credit.release_id}
+                      className="flex items-center gap-3 p-3 bg-[#181818] rounded-lg hover:bg-[#282828] transition-colors animate-fadeIn"
+                      style={{ animationDelay: `${index * 0.05}s` }}
+                      data-testid={`writing-credit-${credit.release_id}`}
+                    >
+                      {credit.thumb && (
+                        <img 
+                          src={credit.thumb} 
+                          alt={credit.title}
+                          className="w-12 h-12 rounded object-cover"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{credit.title}</p>
+                        <p className="text-xs text-[#B3B3B3] truncate">{credit.artist}</p>
+                        <span className="ghost-writer-badge text-xs mt-1">
+                          <Pen className="w-3 h-3 inline mr-1" />
+                          {credit.role}
+                        </span>
+                      </div>
+                      {credit.year && (
+                        <span className="text-xs text-[#7A7A7A]">{credit.year}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Production Credits from Discogs */}
+            {credits?.production_credits?.length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold text-[#e74c3c] mb-4 flex items-center gap-2">
+                  <Disc className="w-5 h-5" />
+                  Crédits de production
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {credits.production_credits.slice(0, 6).map((credit, index) => (
+                    <div 
+                      key={credit.release_id}
+                      className="flex items-center gap-3 p-3 bg-[#181818] rounded-lg hover:bg-[#282828] transition-colors animate-fadeIn"
+                      style={{ animationDelay: `${index * 0.05}s` }}
+                      data-testid={`production-credit-${credit.release_id}`}
+                    >
+                      {credit.thumb && (
+                        <img 
+                          src={credit.thumb} 
+                          alt={credit.title}
+                          className="w-12 h-12 rounded object-cover"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{credit.title}</p>
+                        <p className="text-xs text-[#B3B3B3] truncate">{credit.artist}</p>
+                        <span className="text-xs px-2 py-1 bg-[#e74c3c]/20 text-[#e74c3c] rounded-full mt-1 inline-block">
+                          {credit.role}
+                        </span>
+                      </div>
+                      {credit.year && (
+                        <span className="text-xs text-[#7A7A7A]">{credit.year}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Deezer Related Artists (fallback/additional) */}
+            {relatedArtists.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold text-[#B3B3B3] mb-4">Artistes similaires</h3>
+                <div className="collab-grid">
+                  {relatedArtists.slice(0, 10).map((related, index) => (
+                    <div 
+                      key={related.id}
+                      className="collab-item animate-fadeIn"
+                      style={{ animationDelay: `${index * 0.05}s` }}
+                      onClick={() => navigate(`/artist/${related.id}`)}
+                      data-testid={`collab-${related.id}`}
+                    >
+                      <div className="collab-circle">
+                        {related.picture_medium ? (
+                          <img 
+                            src={related.picture_medium} 
+                            alt={related.name}
+                            onError={(e) => { 
+                              e.target.style.display = 'none';
+                              e.target.parentNode.innerText = related.initials;
+                            }}
+                          />
+                        ) : (
+                          related.initials
+                        )}
+                      </div>
+                      <span className="collab-name">{related.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </section>
