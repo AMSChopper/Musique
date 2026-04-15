@@ -902,5 +902,236 @@ FAMOUS_SONGWRITING_CREDITS = {
             {"title": "Signed, Sealed, Delivered", "artist": "Stevie Wonder", "year": 1970, "info": "Un classique intemporel de la soul", "youtube_id": "pUj9frKY46E"},
             {"title": "Tell Me Something Good", "artist": "Rufus ft. Chaka Khan", "year": 1974, "info": "Écrite et offerte à Rufus par Stevie", "youtube_id": "PubiRn6Al4U"}
         ]
+    },
+
+    # ===================== ARTISTES FRANÇAIS =====================
+    "aya nakamura": {
+        "anecdotes": [
+            "Aya Nakamura est l'artiste francophone la plus écoutée au monde sur Spotify.",
+            "Son vrai nom est Aya Danioko - 'Nakamura' vient du personnage Hiro Nakamura de la série 'Heroes'.",
+            "Elle est née au Mali et a grandi à Aulnay-sous-Bois en Seine-Saint-Denis.",
+            "Elle a chanté aux cérémonies d'ouverture des Jeux Olympiques de Paris 2024 devant le monde entier."
+        ],
+        "songs_written_for_others": [
+            {"title": "Djadja", "artist": "Aya Nakamura", "year": 2018, "info": "Chanson francophone la plus streamée de l'histoire, #1 dans 6 pays", "youtube_id": "iPGgnzc34tY"},
+            {"title": "Pookie", "artist": "Aya Nakamura", "year": 2019, "info": "Hit international qui a confirmé son statut mondial", "youtube_id": "aa3Afg3fzAQ"},
+            {"title": "Copines", "artist": "Aya Nakamura", "year": 2020, "info": "Devenu viral sur TikTok dans le monde entier", "youtube_id": "GNOLwo_TaFE"},
+            {"title": "Love", "artist": "Aya Nakamura ft. Tiakola", "year": 2023, "info": "Collaboration avec la nouvelle star du rap français"},
+            {"title": "Bobo", "artist": "Aya Nakamura", "year": 2020, "info": "Tube dansant de l'album 'Aya'", "youtube_id": "onB2MUq-sMI"},
+            {"title": "Dégaine", "artist": "Aya Nakamura ft. Damso", "year": 2022, "info": "Duo belgo-malien dévastateur", "youtube_id": "tYFJslkOrvI"}
+        ]
+    },
+    "jul": {
+        "anecdotes": [
+            "Jul détient le record de l'artiste français ayant sorti le plus d'albums (40+) en moins de 10 ans.",
+            "Son vrai nom est Julien Mari - il vient des quartiers nord de Marseille.",
+            "Il est l'artiste français le plus certifié de l'histoire avec plus de 10 millions de singles.",
+            "Il publie souvent des albums surprises sans promo, et ils cartonnent quand même."
+        ],
+        "songs_written_for_others": [
+            {"title": "Bande Organisée", "artist": "13 Organisé (Jul, SCH, Soso Maness, Naps...)", "year": 2020, "info": "Hymne de Marseille réunissant 10 rappeurs, record de streams en France", "youtube_id": "29m3sJPND44"},
+            {"title": "Mon bijou", "artist": "Jul", "year": 2016, "info": "Son premier méga-hit mainstream", "youtube_id": "7yjqHLRUCO4"},
+            {"title": "Tchikita", "artist": "Jul", "year": 2016, "info": "La chanson qui l'a fait connaître au grand public", "youtube_id": "fgsnIDRtWLY"},
+            {"title": "C'est pas des LOL", "artist": "Jul", "year": 2019, "info": "Hymne de la rue marseillaise", "youtube_id": "XLF0nt4FPcI"},
+            {"title": "En Y", "artist": "Jul ft. Alonzo", "year": 2021, "info": "Collaboration entre deux piliers du rap marseillais"},
+            {"title": "La Bandite", "artist": "Jul", "year": 2020, "info": "Ambiance méditerranéenne signature de Jul", "youtube_id": "OKH_FgI-j0o"}
+        ]
+    },
+    "pnl": {
+        "anecdotes": [
+            "PNL (Peace N' Lovés) sont deux frères : Ademo (Tarik) et N.O.S (Nabil Andrieu).",
+            "Ils n'ont jamais fait d'interview ni de promotion traditionnelle - tout est passé par le bouche-à-oreille.",
+            "Leur clip 'Au DD' a été tourné sur la Tour Eiffel de manière non-autorisée.",
+            "L'acronyme QLF signifie 'Que La Famille', leur philosophie de vie."
+        ],
+        "songs_written_for_others": [
+            {"title": "Au DD", "artist": "PNL", "year": 2019, "info": "Clip tourné illégalement au sommet de la Tour Eiffel, record de vues FR", "youtube_id": "BtyHYIpykN0"},
+            {"title": "Da", "artist": "PNL", "year": 2016, "info": "L'un des morceaux les plus emblématiques du rap français", "youtube_id": "McFzy2kOvoo"},
+            {"title": "Le monde ou rien", "artist": "PNL", "year": 2015, "info": "Titre phare de l'album éponyme", "youtube_id": "bVqt2DmFJSs"},
+            {"title": "Jusqu'au dernier gramme", "artist": "PNL", "year": 2019, "info": "Sur l'album 'Deux frères' qui a battu des records de ventes", "youtube_id": "Pj-5G0oUVaE"},
+            {"title": "Onizuka", "artist": "PNL", "year": 2016, "info": "Nommé d'après le personnage de manga Great Teacher Onizuka", "youtube_id": "31ypJaGBjhs"},
+            {"title": "À l'ammoniaque", "artist": "PNL", "year": 2019, "info": "Atmosphère planante signature de PNL", "youtube_id": "cF1gWfhdL_4"}
+        ]
+    },
+    "nekfeu": {
+        "anecdotes": [
+            "Nekfeu a commencé par le freestyle et a remporté plusieurs battles dont 'End of the Weak' à New York.",
+            "Son vrai nom est Ken Samaras - il est d'origine grecque.",
+            "Il est membre du collectif '1995' et du groupe S-Crew.",
+            "Son album 'Feu' est considéré comme l'un des meilleurs albums de rap français de la décennie 2010."
+        ],
+        "songs_written_for_others": [
+            {"title": "On verra", "artist": "Nekfeu", "year": 2015, "info": "Hit de l'album 'Feu', certifié diamant", "youtube_id": "2bjk26RwjyU"},
+            {"title": "Nuit", "artist": "Nekfeu ft. Vanessa Paradis", "year": 2019, "info": "Collaboration inattendue avec la chanteuse française", "youtube_id": "dfKZ2_1NTKA"},
+            {"title": "Risibles Amours", "artist": "Nekfeu", "year": 2015, "info": "Titre référence à Milan Kundera, montrant sa culture littéraire"},
+            {"title": "Écrire", "artist": "Nekfeu", "year": 2016, "info": "Hommage à l'écriture et à la création artistique", "youtube_id": "bS2d5PvkFhQ"},
+            {"title": "Mauvaise graine", "artist": "Nekfeu", "year": 2019, "info": "Sur l'album 'Les étoiles vagabondes'", "youtube_id": "8qP0_QeBl3Y"},
+            {"title": "Plume", "artist": "Nekfeu ft. Phénomène Bizness", "year": 2019, "info": "Titre qui montre la profondeur de son écriture"}
+        ]
+    },
+    "damso": {
+        "anecdotes": [
+            "Damso est belge d'origine congolaise - il a grandi à Bruxelles.",
+            "Son vrai nom est William Kalubi Mwamba.",
+            "Il a été le rappeur francophone le plus écouté sur Spotify en 2018 et 2021.",
+            "Il a composé l'hymne officiel des Diables Rouges (équipe de foot belge) pour la Coupe du Monde 2022."
+        ],
+        "songs_written_for_others": [
+            {"title": "Macarena", "artist": "Damso", "year": 2017, "info": "Hit qui a explosé en France et en Belgique", "youtube_id": "De0YQ3TjsSY"},
+            {"title": "Dégaine", "artist": "Aya Nakamura ft. Damso", "year": 2022, "info": "Duo belgo-malien massif", "youtube_id": "tYFJslkOrvI"},
+            {"title": "Mevtr", "artist": "Damso", "year": 2021, "info": "Titre phare de l'album 'QALF Infinity'", "youtube_id": "EflZ7V-8DFE"},
+            {"title": "Bruxelles vie", "artist": "Damso", "year": 2018, "info": "Hymne à sa ville natale, Bruxelles", "youtube_id": "FNWJ6QVfzlU"},
+            {"title": "Coeur en miettes", "artist": "Damso", "year": 2021, "info": "Ballade mélancolique signature de Damso"},
+            {"title": "Nwaar Is the New Black", "artist": "Damso", "year": 2022, "info": "Album le plus ambitieux de sa carrière"}
+        ]
+    },
+    "orelsan": {
+        "anecdotes": [
+            "Orelsan a remporté 3 Victoires de la Musique en 2022 pour 'Civilisation'.",
+            "Son vrai nom est Aurélien Cotentin - il vient de Caen en Normandie.",
+            "Il a réalisé un documentaire Netflix 'Montre jamais ça à personne' sur sa carrière.",
+            "Son frère Clément Cotentin (alias Skread) est son producteur attitré depuis le début."
+        ],
+        "songs_written_for_others": [
+            {"title": "Basique", "artist": "Orelsan", "year": 2017, "info": "Clip satirique devenu viral, critique de la société moderne", "youtube_id": "2bjk26RwjyU"},
+            {"title": "La fête est finie", "artist": "Orelsan", "year": 2017, "info": "Album qui a marqué son grand retour critique", "youtube_id": "Y0G0X29Dz4A"},
+            {"title": "L'odeur de l'essence", "artist": "Orelsan", "year": 2021, "info": "Premier single de 'Civilisation', clip dystopique", "youtube_id": "1fzDAIrxjBs"},
+            {"title": "Rêves bizarres", "artist": "Orelsan ft. Damso", "year": 2021, "info": "Collaboration franco-belge mémorable", "youtube_id": "tUNYw1w9g4Y"},
+            {"title": "La terre est ronde", "artist": "Orelsan", "year": 2021, "info": "Réflexion poétique sur l'existence"},
+            {"title": "Suicide social", "artist": "Orelsan", "year": 2011, "info": "Le morceau choc qui l'a fait connaître du grand public"}
+        ]
+    },
+    "booba": {
+        "anecdotes": [
+            "Booba est considéré comme l'un des pères du rap français moderne.",
+            "Son vrai nom est Élie Yaffa - il est d'origine sénégalaise.",
+            "Il a lancé le label 92i et a influencé toute une génération de rappeurs.",
+            "Il détient le record de l'artiste le plus certifié de l'histoire du rap français."
+        ],
+        "songs_written_for_others": [
+            {"title": "DKR", "artist": "Booba", "year": 2016, "info": "Hommage à Dakar, 250M+ de vues, record pour le rap FR", "youtube_id": "6smzJWCaJEY"},
+            {"title": "Validée", "artist": "Booba", "year": 2013, "info": "Hit pop-rap crossover"},
+            {"title": "Petite fille", "artist": "Booba", "year": 2017, "info": "Chanson tendre dédiée à sa fille Luna"},
+            {"title": "92i Veyron", "artist": "Booba", "year": 2015, "info": "Titre éponyme de son label"},
+            {"title": "Azerty", "artist": "Booba", "year": 2010, "info": "Classique du rap français des années 2010", "youtube_id": "pZIjyRKQwcM"},
+            {"title": "Temps mort", "artist": "Booba", "year": 2002, "info": "Son premier album solo devenu culte"}
+        ]
+    },
+    "ninho": {
+        "anecdotes": [
+            "Ninho est le rappeur avec le plus de certifications en France devant Booba et Jul.",
+            "Son vrai nom est William Nzobazola - il est d'origine congolaise.",
+            "Il vient de Bagneux dans les Hauts-de-Seine (91).",
+            "Il est surnommé 'NI' par ses fans et a popularisé le style mélodique dans le rap français."
+        ],
+        "songs_written_for_others": [
+            {"title": "Lettre à une femme", "artist": "Ninho", "year": 2019, "info": "Ballade sensible certifiée diamant", "youtube_id": "rWDFmQ0w8QU"},
+            {"title": "Jefe", "artist": "Ninho", "year": 2020, "info": "Single de l'album 'JEFE' certifié diamant", "youtube_id": "6C7YhI5mFZE"},
+            {"title": "La vie qu'on mène", "artist": "Ninho", "year": 2018, "info": "Son morceau le plus introspectif"},
+            {"title": "Maman ne le sait pas", "artist": "Ninho", "year": 2020, "info": "Titre touchant sur la double vie"},
+            {"title": "Goutte d'eau", "artist": "Ninho", "year": 2022, "info": "Hit mélodique caractéristique de son style"}
+        ]
+    },
+    "maitre gims": {
+        "anecdotes": [
+            "Maître Gims était le leader du groupe Sexion d'Assaut avant sa carrière solo.",
+            "Son vrai nom est Gandhi Bilel Djuna - il est d'origine congolaise.",
+            "Il porte presque toujours des lunettes de soleil, même en intérieur.",
+            "Il a vendu plus de 6 millions de singles en France."
+        ],
+        "songs_written_for_others": [
+            {"title": "Sapés comme jamais", "artist": "Maître Gims ft. Niska", "year": 2015, "info": "Tube festif devenu un classique", "youtube_id": "de7qWafuCoI"},
+            {"title": "Bella", "artist": "Maître Gims", "year": 2013, "info": "Premier single solo massif, certifié diamant", "youtube_id": "UbKz_ohFGfc"},
+            {"title": "Est-ce que tu m'aimes ?", "artist": "Maître Gims", "year": 2015, "info": "Chanson d'amour devenue virale", "youtube_id": "bMDDFO4v_uo"},
+            {"title": "J'me tire", "artist": "Maître Gims", "year": 2013, "info": "Hit pop-rap de la Sexion d'Assaut", "youtube_id": "cABagvE-tPk"},
+            {"title": "Tout donner", "artist": "Maître Gims", "year": 2016, "info": "Single motivationnel"}
+        ]
+    },
+    "mc solaar": {
+        "anecdotes": [
+            "MC Solaar est considéré comme le pionnier du rap français intellectuel.",
+            "Son vrai nom est Claude M'Barali - il est d'origine tchadienne.",
+            "Il a étudié les langues et la philosophie à l'université avant de rapper.",
+            "Ses textes sont étudiés dans les écoles et universités françaises comme de la poésie contemporaine."
+        ],
+        "songs_written_for_others": [
+            {"title": "Caroline", "artist": "MC Solaar", "year": 1992, "info": "Le premier méga-hit du rap français, encore un classique aujourd'hui", "youtube_id": "DjdXIvOOIuU"},
+            {"title": "Bouge de là", "artist": "MC Solaar", "year": 1991, "info": "Le titre qui a lancé le rap français mainstream", "youtube_id": "oXWMv24YriM"},
+            {"title": "Nouveau Western", "artist": "MC Solaar", "year": 1994, "info": "Référence culturelle majeure du rap français"},
+            {"title": "La Belle et le Bad Boy", "artist": "MC Solaar", "year": 2001, "info": "Hit pop-rap de l'album 'Cinquième As'", "youtube_id": "j7GQ67nwL7I"},
+            {"title": "Solaar Pleure", "artist": "MC Solaar", "year": 2001, "info": "Morceau engagé et poétique"}
+        ]
+    },
+    "iam": {
+        "anecdotes": [
+            "IAM est l'un des groupes fondateurs du rap français, formé à Marseille en 1989.",
+            "Akhenaton et Shurik'n sont les deux MC principaux du groupe.",
+            "Leur album 'L'école du micro d'argent' (1997) est considéré comme le meilleur album de rap français.",
+            "Ils sont passionnés d'Égypte ancienne et de culture orientale, ce qui se reflète dans leur nom et leur musique."
+        ],
+        "songs_written_for_others": [
+            {"title": "Je danse le Mia", "artist": "IAM", "year": 1994, "info": "Le tube qui a popularisé le rap français auprès du grand public", "youtube_id": "g6e_VEMBo10"},
+            {"title": "Petit frère", "artist": "IAM", "year": 1997, "info": "Morceau social puissant sur la jeunesse de banlieue", "youtube_id": "8aJzUhHGmYQ"},
+            {"title": "Demain c'est loin", "artist": "IAM", "year": 1997, "info": "10 minutes de storytelling rap magistral, considéré comme le meilleur morceau de rap français"},
+            {"title": "L'empire du côté obscur", "artist": "IAM", "year": 1997, "info": "Référence Star Wars dans le rap français"},
+            {"title": "Nés sous la même étoile", "artist": "IAM", "year": 1997, "info": "Réflexion sur les inégalités sociales"}
+        ]
+    },
+    "tiakola": {
+        "anecdotes": [
+            "Tiakola est devenu viral avec 'La 11' en 2022 sans aucun label derrière lui.",
+            "Son vrai nom est Harouna Traoré - il est d'origine malienne.",
+            "Il mélange le rap, l'afrobeats et le R&B francophone comme personne.",
+            "Il est le nouvel artiste français le plus streamé de sa génération."
+        ],
+        "songs_written_for_others": [
+            {"title": "La 11", "artist": "Tiakola", "year": 2022, "info": "Le tube qui l'a révélé au grand public, devenu viral sur TikTok", "youtube_id": "iuNgPoqUqEg"},
+            {"title": "Love", "artist": "Aya Nakamura ft. Tiakola", "year": 2023, "info": "Duo avec la plus grande star francophone"},
+            {"title": "Méchant", "artist": "Tiakola", "year": 2023, "info": "Hit afrobeat-rap de l'album 'Le Monde Est Cruel'"},
+            {"title": "Grosse patate", "artist": "Tiakola", "year": 2023, "info": "Tube festif de l'été 2023"}
+        ]
+    },
+    "niska": {
+        "anecdotes": [
+            "Niska a inventé la danse 'Réseaux' qui est devenue virale dans toute l'Afrique et la France.",
+            "Son vrai nom est Stanislas Dinga Pinto - il est d'origine congolaise.",
+            "Il est le rappeur français avec le plus de vues sur YouTube (3 milliards+).",
+            "Il a popularisé le son afro-trap en France."
+        ],
+        "songs_written_for_others": [
+            {"title": "Réseaux", "artist": "Niska", "year": 2017, "info": "Clip le plus vu du rap français pendant longtemps", "youtube_id": "JVVqga3GgDo"},
+            {"title": "Sapés comme jamais", "artist": "Maître Gims ft. Niska", "year": 2015, "info": "Le feat qui l'a fait connaître du grand public", "youtube_id": "de7qWafuCoI"},
+            {"title": "Toka", "artist": "Niska", "year": 2019, "info": "Ambiance afro-trap signature"},
+            {"title": "Médicament", "artist": "Niska", "year": 2019, "info": "Hit dansant certifié diamant", "youtube_id": "OHaFGJl9eDA"},
+            {"title": "Salé", "artist": "Niska", "year": 2020, "info": "Titre sombre et introspectif"}
+        ]
+    },
+    "francis cabrel": {
+        "anecdotes": [
+            "Francis Cabrel est l'auteur-compositeur français le plus vendu de tous les temps.",
+            "Il vient d'Astaffort, un petit village du Lot-et-Garonne.",
+            "Il a vendu plus de 28 millions d'albums dans le monde.",
+            "Il a fondé les 'Rencontres d'Astaffort' pour aider les jeunes auteurs-compositeurs."
+        ],
+        "songs_written_for_others": [
+            {"title": "Je l'aime à mourir", "artist": "Francis Cabrel", "year": 1979, "info": "L'une des chansons françaises les plus reprises au monde", "youtube_id": "bMuFQy0Nz1Q"},
+            {"title": "Petite Marie", "artist": "Francis Cabrel", "year": 1987, "info": "Écrite pour sa femme, devenue un classique de la chanson française"},
+            {"title": "La Corrida", "artist": "Francis Cabrel", "year": 1994, "info": "Chanson engagée contre la corrida, vue du point de vue du taureau", "youtube_id": "GrFYsvnZbKU"},
+            {"title": "Octobre", "artist": "Francis Cabrel", "year": 1994, "info": "Ballade poétique sur l'automne"}
+        ]
+    },
+    "edith piaf": {
+        "anecdotes": [
+            "Édith Piaf a grandi dans la rue et chantait pour survivre dès l'âge de 15 ans.",
+            "Sa chanson 'La Vie en rose' est inscrite au Grammy Hall of Fame.",
+            "Elle mesurait seulement 1m47, d'où son surnom 'La Môme' (la gamine).",
+            "Elle a été la première artiste française à devenir une superstar internationale."
+        ],
+        "songs_written_for_others": [
+            {"title": "La Vie en rose", "artist": "Édith Piaf", "year": 1947, "info": "L'une des chansons françaises les plus connues au monde, reprise par des centaines d'artistes", "youtube_id": "kFzViYkZAz4"},
+            {"title": "Non, je ne regrette rien", "artist": "Édith Piaf", "year": 1960, "info": "Écrite spécialement pour elle par Charles Dumont, devenue son hymne", "youtube_id": "Q3Kvu6Kgp88"},
+            {"title": "Hymne à l'amour", "artist": "Édith Piaf", "year": 1950, "info": "Écrite pour Marcel Cerdan, son grand amour décédé dans un crash d'avion", "youtube_id": "7pFpiB0WXq4"},
+            {"title": "Milord", "artist": "Édith Piaf", "year": 1959, "info": "Écrite par Georges Moustaki, devenue un standard mondial"}
+        ]
     }
 }

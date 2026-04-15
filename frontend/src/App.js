@@ -1,11 +1,99 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import "@/App.css";
 import { BrowserRouter, Routes, Route, useNavigate, useParams, Link } from "react-router-dom";
 import axios from "axios";
-import { Search, Trophy, Music, ArrowLeft, Play, Clock, Disc, Users, ChevronRight, Volume2, Check, X, Loader2, Pen, Sparkles, ExternalLink, Quote, BookOpen } from "lucide-react";
+import { Search, Trophy, Music, ArrowLeft, Play, Pause, Clock, Disc, Users, ChevronRight, Volume2, Check, X, Loader2, Pen, Sparkles, Quote, BookOpen, Youtube } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+
+// ==================== INLINE AUDIO PLAYER ====================
+const AudioPlayer = ({ src, title }) => {
+  const audioRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      // Stop all other audio elements first
+      document.querySelectorAll('audio').forEach(a => { a.pause(); a.currentTime = 0; });
+      audioRef.current.play().catch(() => {});
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const onTimeUpdate = () => setProgress((audio.currentTime / audio.duration) * 100 || 0);
+    const onEnded = () => { setIsPlaying(false); setProgress(0); };
+    const onPause = () => setIsPlaying(false);
+    const onPlay = () => setIsPlaying(true);
+
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('ended', onEnded);
+    audio.addEventListener('pause', onPause);
+    audio.addEventListener('play', onPlay);
+
+    return () => {
+      audio.removeEventListener('timeupdate', onTimeUpdate);
+      audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('pause', onPause);
+      audio.removeEventListener('play', onPlay);
+    };
+  }, []);
+
+  if (!src) return null;
+
+  return (
+    <div className="audio-player" data-testid="audio-player">
+      <audio ref={audioRef} src={src} preload="none" />
+      <button
+        onClick={togglePlay}
+        className={`play-btn ${isPlaying ? 'playing' : ''}`}
+        title={isPlaying ? 'Pause' : `Écouter ${title}`}
+        data-testid="play-btn"
+      >
+        {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+      </button>
+      {isPlaying && (
+        <div className="audio-progress">
+          <div className="audio-progress-fill" style={{ width: `${progress}%` }} />
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ==================== YOUTUBE INLINE PLAYER ====================
+const YoutubeInlinePlayer = ({ youtubeId, onClose }) => {
+  if (!youtubeId) return null;
+
+  return (
+    <div className="yt-inline-player animate-fadeIn" data-testid="yt-inline-player">
+      <div className="yt-inline-container">
+        <iframe
+          src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&modestbranding=1&rel=0`}
+          title="YouTube Player"
+          frameBorder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+      <button
+        onClick={onClose}
+        className="yt-close-btn"
+        data-testid="yt-close-btn"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  );
+};
 
 // ==================== HEADER COMPONENT ====================
 const Header = ({ showSearch = true }) => {
@@ -218,6 +306,87 @@ const Home = () => {
   );
 };
 
+// ==================== GHOSTWRITING SECTION ====================
+const GhostwritingSection = ({ artist, songs }) => {
+  const [activeYoutube, setActiveYoutube] = useState(null);
+
+  return (
+    <div className="mt-16" data-testid="ghostwriting-section">
+      <h2 className="text-2xl font-bold mb-2 flex items-center gap-3">
+        <Pen className="w-7 h-7 text-[#f1c40f]" />
+        Chansons écrites pour d'autres
+      </h2>
+      <p className="text-[#B3B3B3] text-sm mb-6">
+        Les tubes composés par {artist.name} pour d'autres artistes
+      </p>
+
+      {/* Inline YouTube Player */}
+      {activeYoutube && (
+        <YoutubeInlinePlayer
+          youtubeId={activeYoutube}
+          onClose={() => setActiveYoutube(null)}
+        />
+      )}
+      
+      <div className="space-y-3">
+        {songs.map((song, index) => (
+          <div 
+            key={index}
+            className="group flex items-center gap-4 p-4 bg-[#181818] rounded-xl border border-[#282828] hover:border-[#f1c40f]/40 hover:bg-[#282828] transition-all animate-fadeIn"
+            style={{ animationDelay: `${index * 0.05}s` }}
+            data-testid={`ghostwrite-${index}`}
+          >
+            <span className="w-8 text-center text-[#7A7A7A] font-bold text-lg shrink-0">
+              {index + 1}
+            </span>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="font-semibold text-white">{song.title}</p>
+                <span className="ghost-writer-badge" style={{ fontSize: '0.6rem' }}>PLUME</span>
+              </div>
+              <p className="text-sm text-[#1db954] font-medium mt-0.5">
+                pour <span className="font-bold">{song.artist}</span>
+                {song.year && <span className="text-[#7A7A7A] ml-2">({song.year})</span>}
+              </p>
+              {song.info && (
+                <p className="text-xs text-[#7A7A7A] mt-1.5 italic leading-relaxed">
+                  <BookOpen className="w-3 h-3 inline mr-1 opacity-60" />
+                  {song.info}
+                </p>
+              )}
+            </div>
+
+            {song.youtube_id && (
+              <button
+                onClick={() => setActiveYoutube(activeYoutube === song.youtube_id ? null : song.youtube_id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors shrink-0 ${
+                  activeYoutube === song.youtube_id
+                    ? 'bg-[#ff0000] text-white'
+                    : 'bg-[#282828] text-white hover:bg-[#333]'
+                }`}
+                data-testid={`youtube-btn-${index}`}
+              >
+                {activeYoutube === song.youtube_id ? (
+                  <>
+                    <Pause className="w-4 h-4" />
+                    <span className="hidden sm:inline">Fermer</span>
+                  </>
+                ) : (
+                  <>
+                    <Youtube className="w-4 h-4 text-[#ff0000]" />
+                    <span className="hidden sm:inline">Écouter</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 // ==================== ARTIST PAGE ====================
 const ArtistPage = () => {
   const { artistId } = useParams();
@@ -367,14 +536,7 @@ const ArtistPage = () => {
                     <p className="text-sm text-[#B3B3B3] truncate">{track.album?.title}</p>
                   </div>
                   {track.preview && (
-                    <a 
-                      href={track.preview} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="p-2 hover:bg-[#282828] rounded-full transition-colors"
-                    >
-                      <Play className="w-5 h-5 text-[#1db954]" />
-                    </a>
+                    <AudioPlayer src={track.preview} title={track.title} />
                   )}
                   <span className="text-[#7A7A7A] text-sm w-12 text-right">
                     <Clock className="w-4 h-4 inline mr-1" />
@@ -439,63 +601,7 @@ const ArtistPage = () => {
 
         {/* Songs Written For Others - Ghostwriting Section */}
         {extras?.songs_written_for_others?.length > 0 && (
-          <div className="mt-16" data-testid="ghostwriting-section">
-            <h2 className="text-2xl font-bold mb-2 flex items-center gap-3">
-              <Pen className="w-7 h-7 text-[#f1c40f]" />
-              Chansons écrites pour d'autres
-            </h2>
-            <p className="text-[#B3B3B3] text-sm mb-6">
-              Les tubes composés par {artist.name} pour d'autres artistes
-            </p>
-            
-            <div className="space-y-3">
-              {extras.songs_written_for_others.map((song, index) => (
-                <div 
-                  key={index}
-                  className="group flex items-center gap-4 p-4 bg-[#181818] rounded-xl border border-[#282828] hover:border-[#f1c40f]/40 hover:bg-[#282828] transition-all animate-fadeIn"
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                  data-testid={`ghostwrite-${index}`}
-                >
-                  {/* Rank number */}
-                  <span className="w-8 text-center text-[#7A7A7A] font-bold text-lg">
-                    {index + 1}
-                  </span>
-
-                  {/* Song info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold text-white">{song.title}</p>
-                      <span className="ghost-writer-badge" style={{ fontSize: '0.6rem' }}>PLUME</span>
-                    </div>
-                    <p className="text-sm text-[#1db954] font-medium mt-0.5">
-                      pour <span className="font-bold">{song.artist}</span>
-                      {song.year && <span className="text-[#7A7A7A] ml-2">({song.year})</span>}
-                    </p>
-                    {song.info && (
-                      <p className="text-xs text-[#7A7A7A] mt-1.5 italic leading-relaxed">
-                        <BookOpen className="w-3 h-3 inline mr-1 opacity-60" />
-                        {song.info}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* YouTube link */}
-                  {song.youtube_id && (
-                    <a
-                      href={`https://www.youtube.com/watch?v=${song.youtube_id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-2 bg-[#282828] rounded-full text-sm font-medium text-white hover:bg-[#333] transition-colors shrink-0"
-                      data-testid={`youtube-link-${index}`}
-                    >
-                      <Play className="w-4 h-4 text-[#ff0000]" />
-                      <span className="hidden sm:inline">Écouter</span>
-                    </a>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+          <GhostwritingSection artist={artist} songs={extras.songs_written_for_others} />
         )}
 
         {/* Collaborations & Connexions Section */}
