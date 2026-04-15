@@ -863,6 +863,157 @@ async def get_artist_full_credits(name: str = Query(..., min_length=1)):
         logger.error(f"Credits API error: {e}")
         raise HTTPException(status_code=500, detail="Failed to get artist credits")
 
+# ==================== DEEZER TRACK SEARCH (for previews) ====================
+
+@api_router.get("/deezer/track/search")
+async def search_deezer_track(q: str = Query(..., min_length=1)):
+    """Search a track on Deezer and return preview URL"""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{DEEZER_API}/search/track",
+                params={"q": q, "limit": 1},
+                timeout=10.0
+            )
+            data = response.json()
+            
+            tracks = data.get("data", [])
+            if tracks:
+                track = tracks[0]
+                return {
+                    "found": True,
+                    "title": track.get("title"),
+                    "artist": track.get("artist", {}).get("name"),
+                    "preview": track.get("preview"),
+                    "album_cover": track.get("album", {}).get("cover_medium")
+                }
+            return {"found": False}
+    except httpx.RequestError:
+        return {"found": False}
+
+@api_router.get("/deezer/tracks/batch")
+async def batch_search_deezer_tracks(songs: str = Query(...)):
+    """Batch search tracks on Deezer - songs format: 'title1|artist1,,title2|artist2'"""
+    import asyncio
+    
+    song_list = [s.strip() for s in songs.split(",,") if s.strip()]
+    
+    async def search_one(query):
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f"{DEEZER_API}/search/track",
+                    params={"q": query, "limit": 1},
+                    timeout=8.0
+                )
+                data = response.json()
+                tracks = data.get("data", [])
+                if tracks:
+                    t = tracks[0]
+                    return {
+                        "query": query,
+                        "found": True,
+                        "preview": t.get("preview"),
+                        "album_cover": t.get("album", {}).get("cover_small"),
+                        "deezer_title": t.get("title"),
+                        "deezer_artist": t.get("artist", {}).get("name")
+                    }
+        except Exception:
+            pass
+        return {"query": query, "found": False}
+    
+    # Process in batches of 5 to avoid rate limiting
+    results = []
+    for i in range(0, len(song_list), 5):
+        batch = song_list[i:i+5]
+        batch_results = await asyncio.gather(*[search_one(q) for q in batch])
+        results.extend(batch_results)
+    
+    return {"results": results}
+
+# ==================== ARTIST CONNECTION GRAPH ====================
+
+@api_router.get("/artist/{artist_id}/graph")
+async def get_artist_graph(artist_id: int, depth: int = 1):
+    """Build a connection graph for an artist using Deezer related artists"""
+    try:
+        nodes = {}
+        links = []
+        
+        async with httpx.AsyncClient() as client:
+            # Get main artist
+            main_response = await client.get(f"{DEEZER_API}/artist/{artist_id}")
+            main_data = main_response.json()
+            
+            if "error" in main_data:
+                raise HTTPException(status_code=404, detail="Artist not found")
+            
+            main_node = {
+                "id": str(main_data["id"]),
+                "name": main_data.get("name"),
+                "picture": main_data.get("picture_medium"),
+                "nb_fan": main_data.get("nb_fan", 0),
+                "is_main": True
+            }
+            nodes[main_node["id"]] = main_node
+            
+            # Get related artists (level 1)
+            related_response = await client.get(
+                f"{DEEZER_API}/artist/{artist_id}/related",
+                params={"limit": 8}
+            )
+            related_data = related_response.json()
+            
+            for rel in related_data.get("data", []):
+                rel_id = str(rel["id"])
+                if rel_id not in nodes:
+                    nodes[rel_id] = {
+                        "id": rel_id,
+                        "name": rel.get("name"),
+                        "picture": rel.get("picture_medium"),
+                        "nb_fan": rel.get("nb_fan", 0),
+                        "is_main": False
+                    }
+                links.append({
+                    "source": main_node["id"],
+                    "target": rel_id
+                })
+            
+            # Get level 2 connections (related of related) for richer graph
+            if depth >= 2:
+                level1_ids = [l["target"] for l in links[:4]]  # limit to first 4
+                for l1_id in level1_ids:
+                    try:
+                        l2_response = await client.get(
+                            f"{DEEZER_API}/artist/{l1_id}/related",
+                            params={"limit": 4}
+                        )
+                        l2_data = l2_response.json()
+                        
+                        for rel2 in l2_data.get("data", []):
+                            rel2_id = str(rel2["id"])
+                            if rel2_id not in nodes:
+                                nodes[rel2_id] = {
+                                    "id": rel2_id,
+                                    "name": rel2.get("name"),
+                                    "picture": rel2.get("picture_medium"),
+                                    "nb_fan": rel2.get("nb_fan", 0),
+                                    "is_main": False
+                                }
+                            link = {"source": l1_id, "target": rel2_id}
+                            if link not in links and {"source": rel2_id, "target": l1_id} not in links:
+                                links.append(link)
+                    except Exception:
+                        continue
+        
+        return {
+            "nodes": list(nodes.values()),
+            "links": links
+        }
+    except httpx.RequestError as e:
+        logger.error(f"Graph API error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to build artist graph")
+
 # ==================== BILLBOARD SCRAPING ====================
 
 @api_router.get("/billboard/hot100")

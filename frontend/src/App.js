@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import "@/App.css";
 import { BrowserRouter, Routes, Route, useNavigate, useParams, Link } from "react-router-dom";
 import axios from "axios";
-import { Search, Trophy, Music, ArrowLeft, Play, Pause, Clock, Disc, Users, ChevronRight, Volume2, Check, X, Loader2, Pen, Sparkles, Quote, BookOpen, Youtube } from "lucide-react";
+import { Search, Trophy, Music, ArrowLeft, Play, Pause, Clock, Disc, Users, ChevronRight, Volume2, Check, X, Loader2, Pen, Sparkles, Quote, BookOpen, Youtube, GitBranch } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -547,7 +547,7 @@ const ArtistPage = () => {
             <div className="pb-4">
               <p className="text-sm uppercase tracking-widest text-[#B3B3B3] mb-2">Artiste</p>
               <h1 className="text-5xl md:text-6xl font-black mb-4" data-testid="artist-name">{artist.name}</h1>
-              <div className="flex items-center gap-6 text-[#B3B3B3]">
+              <div className="flex items-center gap-6 text-[#B3B3B3] flex-wrap">
                 <span className="flex items-center gap-2">
                   <Users className="w-5 h-5" />
                   {artist.nb_fan?.toLocaleString()} fans
@@ -556,6 +556,14 @@ const ArtistPage = () => {
                   <Disc className="w-5 h-5" />
                   {artist.nb_album} albums
                 </span>
+                <Link
+                  to={`/artist/${artistId}/graph`}
+                  className="flex items-center gap-2 px-4 py-1.5 bg-[#282828] hover:bg-[#333] rounded-full text-sm font-medium text-white transition-colors"
+                  data-testid="graph-link"
+                >
+                  <GitBranch className="w-4 h-4 text-[#1db954]" />
+                  Graphe de connexions
+                </Link>
               </div>
             </div>
           </div>
@@ -925,6 +933,7 @@ const BillboardPage = () => {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [songs, setSongs] = useState([]);
+  const [previews, setPreviews] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isCurrentWeek, setIsCurrentWeek] = useState(true);
@@ -935,6 +944,7 @@ const BillboardPage = () => {
     const fetchBillboard = async () => {
       setLoading(true);
       setError(null);
+      setPreviews({});
       try {
         let response;
         if (isCurrentWeek) {
@@ -942,7 +952,28 @@ const BillboardPage = () => {
         } else {
           response = await axios.get(`${API}/billboard/year/${selectedYear}`);
         }
-        setSongs(response.data.songs || []);
+        const fetchedSongs = response.data.songs || [];
+        setSongs(fetchedSongs);
+        
+        // Fetch Deezer previews for first 20 songs in background
+        if (fetchedSongs.length > 0) {
+          const queries = fetchedSongs.slice(0, 20).map(s => `${s.title} ${s.artist}`);
+          const batchQuery = queries.join(",,");
+          try {
+            const previewRes = await axios.get(`${API}/deezer/tracks/batch`, {
+              params: { songs: batchQuery }
+            });
+            const previewMap = {};
+            (previewRes.data.results || []).forEach((r, i) => {
+              if (r.found && r.preview) {
+                previewMap[i] = r;
+              }
+            });
+            setPreviews(previewMap);
+          } catch (e) {
+            console.log("Could not fetch previews:", e);
+          }
+        }
       } catch (err) {
         console.error("Error fetching Billboard:", err);
         setError("Impossible de charger le classement Billboard");
@@ -1036,25 +1067,44 @@ const BillboardPage = () => {
           </div>
         ) : (
           <div className="bg-[#181818] rounded-xl overflow-hidden" data-testid="billboard-list">
-            <div className="grid grid-cols-[60px_1fr_1fr] gap-4 px-6 py-4 border-b border-[#282828] text-[#7A7A7A] text-sm font-medium uppercase tracking-wider">
+            <div className="grid grid-cols-[50px_40px_1fr_1fr_60px] gap-3 px-6 py-4 border-b border-[#282828] text-[#7A7A7A] text-sm font-medium uppercase tracking-wider">
               <span>#</span>
+              <span></span>
               <span>Titre</span>
               <span>Artiste</span>
+              <span></span>
             </div>
-            {songs.map((song, index) => (
-              <div 
-                key={`${song.rank}-${song.title}`}
-                className="billboard-row grid grid-cols-[60px_1fr_1fr] gap-4 items-center animate-fadeIn"
-                style={{ animationDelay: `${index * 0.02}s` }}
-                data-testid={`billboard-row-${song.rank}`}
-              >
-                <span className={`text-2xl font-black ${song.rank <= 10 ? 'text-[#1db954]' : 'text-[#7A7A7A]'}`}>
-                  {song.rank}
-                </span>
-                <span className="font-semibold truncate">{song.title}</span>
-                <span className="text-[#B3B3B3] truncate">{song.artist}</span>
-              </div>
-            ))}
+            {songs.map((song, index) => {
+              const preview = previews[index];
+              return (
+                <div 
+                  key={`${song.rank}-${song.title}`}
+                  className="billboard-row grid grid-cols-[50px_40px_1fr_1fr_60px] gap-3 items-center animate-fadeIn"
+                  style={{ animationDelay: `${index * 0.02}s` }}
+                  data-testid={`billboard-row-${song.rank}`}
+                >
+                  <span className={`text-2xl font-black ${song.rank <= 10 ? 'text-[#1db954]' : 'text-[#7A7A7A]'}`}>
+                    {song.rank}
+                  </span>
+                  <div className="w-10 h-10 rounded overflow-hidden bg-[#282828] shrink-0">
+                    {preview?.album_cover ? (
+                      <img src={preview.album_cover} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Music className="w-4 h-4 text-[#7A7A7A]" />
+                      </div>
+                    )}
+                  </div>
+                  <span className="font-semibold truncate">{song.title}</span>
+                  <span className="text-[#B3B3B3] truncate">{song.artist}</span>
+                  <div className="flex justify-end">
+                    {preview?.preview && (
+                      <AudioPlayer src={preview.preview} title={song.title} />
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </section>
@@ -1371,6 +1421,183 @@ const BlindTestPage = () => {
 };
 
 // ==================== APP ====================
+// ==================== ARTIST GRAPH PAGE ====================
+const ArtistGraphPage = () => {
+  const { artistId } = useParams();
+  const navigate = useNavigate();
+  const graphRef = useRef(null);
+  const containerRef = useRef(null);
+  const [graphData, setGraphData] = useState({ nodes: [], links: [] });
+  const [loading, setLoading] = useState(true);
+  const [artistName, setArtistName] = useState("");
+  const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+  const [ForceGraph, setForceGraph] = useState(null);
+
+  // Dynamic import of react-force-graph-2d
+  useEffect(() => {
+    import("react-force-graph-2d").then(mod => {
+      setForceGraph(() => mod.default);
+    });
+  }, []);
+
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        setDimensions({
+          width: containerRef.current.offsetWidth,
+          height: Math.max(500, window.innerHeight - 200)
+        });
+      }
+    };
+    updateDimensions();
+    window.addEventListener("resize", updateDimensions);
+    return () => window.removeEventListener("resize", updateDimensions);
+  }, []);
+
+  useEffect(() => {
+    const fetchGraph = async () => {
+      setLoading(true);
+      try {
+        const [graphRes, artistRes] = await Promise.all([
+          axios.get(`${API}/artist/${artistId}/graph`, { params: { depth: 2 } }),
+          axios.get(`${API}/artist/${artistId}`)
+        ]);
+        
+        setGraphData(graphRes.data);
+        setArtistName(artistRes.data.name || "");
+        
+        // Load images for nodes
+        const data = graphRes.data;
+        data.nodes.forEach(node => {
+          if (node.picture) {
+            const img = new Image();
+            img.src = node.picture;
+            node._img = img;
+          }
+        });
+        setGraphData({ ...data });
+      } catch (err) {
+        console.error("Error fetching graph:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchGraph();
+  }, [artistId]);
+
+  const handleNodeClick = (node) => {
+    navigate(`/artist/${node.id}`);
+  };
+
+  const nodeCanvasObject = useCallback((node, ctx, globalScale) => {
+    const size = node.is_main ? 28 : 18;
+    const fontSize = Math.max(10, 12 / globalScale);
+    
+    // Draw circle background
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false);
+    ctx.fillStyle = node.is_main ? "#1db954" : "#282828";
+    ctx.fill();
+    ctx.strokeStyle = node.is_main ? "#1ed760" : "#333";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // Draw image if loaded
+    if (node._img && node._img.complete) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, size - 2, 0, 2 * Math.PI, false);
+      ctx.clip();
+      ctx.drawImage(node._img, node.x - size + 2, node.y - size + 2, (size - 2) * 2, (size - 2) * 2);
+      ctx.restore();
+      
+      // Draw border
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false);
+      ctx.strokeStyle = node.is_main ? "#1db954" : "#444";
+      ctx.lineWidth = node.is_main ? 3 : 1.5;
+      ctx.stroke();
+    }
+    
+    // Draw label
+    ctx.font = `${node.is_main ? "bold" : ""} ${fontSize}px Plus Jakarta Sans, Inter, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.fillStyle = "#fff";
+    ctx.fillText(node.name, node.x, node.y + size + 4);
+  }, []);
+
+  return (
+    <div className="min-h-screen" data-testid="graph-page">
+      <Header showSearch={false} />
+      
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => navigate(`/artist/${artistId}`)}
+              className="flex items-center gap-2 text-[#B3B3B3] hover:text-white transition-colors"
+              data-testid="back-to-artist"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Retour
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold flex items-center gap-3">
+                <GitBranch className="w-6 h-6 text-[#1db954]" />
+                Connexions de {artistName}
+              </h1>
+              <p className="text-sm text-[#B3B3B3]">
+                {graphData.nodes.length} artistes · {graphData.links.length} connexions · Cliquer pour explorer
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div 
+          ref={containerRef}
+          className="bg-[#181818] rounded-2xl border border-[#282828] overflow-hidden relative"
+          data-testid="graph-container"
+        >
+          {loading ? (
+            <div className="flex items-center justify-center" style={{ height: dimensions.height }}>
+              <Loader2 className="w-12 h-12 text-[#1db954] animate-spin" />
+            </div>
+          ) : ForceGraph ? (
+            <ForceGraph
+              ref={graphRef}
+              graphData={graphData}
+              width={dimensions.width}
+              height={dimensions.height}
+              backgroundColor="#181818"
+              nodeCanvasObject={nodeCanvasObject}
+              nodePointerAreaPaint={(node, color, ctx) => {
+                const size = node.is_main ? 28 : 18;
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, size + 5, 0, 2 * Math.PI, false);
+                ctx.fillStyle = color;
+                ctx.fill();
+              }}
+              linkColor={() => "rgba(29, 185, 84, 0.3)"}
+              linkWidth={1.5}
+              linkDirectionalParticles={1}
+              linkDirectionalParticleWidth={2}
+              linkDirectionalParticleColor={() => "#1db954"}
+              onNodeClick={handleNodeClick}
+              cooldownTicks={100}
+              d3VelocityDecay={0.3}
+            />
+          ) : (
+            <div className="flex items-center justify-center" style={{ height: dimensions.height }}>
+              <Loader2 className="w-8 h-8 text-[#1db954] animate-spin" />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 function App() {
   return (
     <div className="App">
@@ -1378,6 +1605,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/artist/:artistId" element={<ArtistPage />} />
+          <Route path="/artist/:artistId/graph" element={<ArtistGraphPage />} />
           <Route path="/billboard" element={<BillboardPage />} />
           <Route path="/blindtest" element={<BlindTestPage />} />
         </Routes>
