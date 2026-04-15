@@ -95,6 +95,41 @@ const YoutubeInlinePlayer = ({ youtubeId, onClose }) => {
   );
 };
 
+// ==================== CLICKABLE ARTIST NAME ====================
+const ClickableArtistName = ({ name, className = "" }) => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+
+  const handleClick = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setLoading(true);
+    try {
+      const res = await axios.get(`${API}/search/artists`, { params: { q: name } });
+      const artists = res.data.artists || [];
+      if (artists.length > 0) {
+        navigate(`/artist/${artists[0].id}`);
+      }
+    } catch (err) {
+      console.error("Search error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={loading}
+      className={`clickable-artist ${className}`}
+      data-testid={`clickable-artist-${name.replace(/\s+/g, '-').toLowerCase()}`}
+    >
+      {loading ? <Loader2 className="w-3 h-3 animate-spin inline mr-1" /> : null}
+      {name}
+    </button>
+  );
+};
+
 // ==================== HEADER COMPONENT ====================
 const Header = ({ showSearch = true }) => {
   const navigate = useNavigate();
@@ -345,8 +380,8 @@ const GhostwritingSection = ({ artist, songs }) => {
                 <p className="font-semibold text-white">{song.title}</p>
                 <span className="ghost-writer-badge" style={{ fontSize: '0.6rem' }}>PLUME</span>
               </div>
-              <p className="text-sm text-[#1db954] font-medium mt-0.5">
-                pour <span className="font-bold">{song.artist}</span>
+              <p className="text-sm font-medium mt-0.5">
+                pour <ClickableArtistName name={song.artist.split(' ft.')[0].split(' feat.')[0].split(' &')[0].split(',')[0].trim()} />
                 {song.year && <span className="text-[#7A7A7A] ml-2">({song.year})</span>}
               </p>
               {song.info && (
@@ -650,7 +685,7 @@ const ArtistPage = () => {
                             initials
                           )}
                         </div>
-                        <span className="collab-name">{collab.name}</span>
+                        <ClickableArtistName name={collab.name} className="collab-name" />
                         {!collab.active && (
                           <span className="text-xs text-[#7A7A7A]">(ancien)</span>
                         )}
