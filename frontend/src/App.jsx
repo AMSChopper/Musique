@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import "@/App.css";
-import { BrowserRouter, Routes, Route, useNavigate, useParams, Link } from "react-router-dom";
+import "./App.css";
+import { Routes, Route, useNavigate, useParams, Link } from "react-router-dom";
 import axios from "axios";
-import { Search, Trophy, Music, ArrowLeft, Play, Pause, Clock, Disc, Users, ChevronRight, Volume2, Check, X, Loader2, Pen, Sparkles, Quote, BookOpen, Youtube, GitBranch } from "lucide-react";
+import {
+  Pen, Sparkles, Quote, BookOpen, GitBranch, Music, Search,
+  Loader2, Trophy, Volume2, ChevronRight, Users, Disc,
+  Clock, Play, Pause, X, ArrowLeft, Check, PlaySquare as YoutubeIcon,
+} from "lucide-react";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const BACKEND_URL = "http://localhost:5173"; // Ou l'URL de ton backend
+const API = "http://localhost:5173/api";
 
 // ==================== INLINE AUDIO PLAYER ====================
 const AudioPlayer = ({ src, title }) => {
@@ -143,7 +147,7 @@ const Header = ({ showSearch = true }) => {
       setSearchResults([]);
       return;
     }
-    
+
     setIsSearching(true);
     try {
       const response = await axios.get(`${API}/search/artists`, { params: { q: query } });
@@ -172,18 +176,18 @@ const Header = ({ showSearch = true }) => {
   };
 
   return (
-    <header className="sticky top-0 z-50 glass border-b border-[#282828]">
-      <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-6">
-        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="logo-link">
-          <Music className="w-8 h-8 text-[#1db954]" />
-          <span className="text-2xl font-black tracking-tight">
+    <header className="main-header">
+      <div className="main-header__inner">
+        <Link to="/" className="brand-link" data-testid="logo-link">
+          <Music className="brand-link__icon" />
+          <span className="brand-link__text">
             MUSIC <span className="text-[#1db954]">HUB</span>
           </span>
         </Link>
 
         {showSearch && (
-          <div className="relative flex-1 max-w-xl">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#7A7A7A]" />
+          <div className="header-search">
+            <Search className="header-search__icon" />
             <input
               type="text"
               value={searchQuery}
@@ -193,10 +197,10 @@ const Header = ({ showSearch = true }) => {
               }}
               onFocus={() => setShowDropdown(true)}
               placeholder="Rechercher un artiste..."
-              className="search-input"
+              className="search-input header-search__input"
               data-testid="search-input"
             />
-            
+
             {showDropdown && (searchResults.length > 0 || isSearching) && (
               <div className="dropdown-menu" data-testid="search-dropdown">
                 {isSearching ? (
@@ -230,17 +234,17 @@ const Header = ({ showSearch = true }) => {
           </div>
         )}
 
-        <nav className="hidden md:flex items-center gap-4">
-          <Link 
-            to="/billboard" 
-            className="btn-secondary text-sm py-2 px-4"
+        <nav className="header-actions">
+          <Link
+            to="/billboard"
+            className="nav-pill nav-pill--outline"
             data-testid="nav-billboard"
           >
             Top 100
           </Link>
-          <Link 
-            to="/blindtest" 
-            className="btn-primary text-sm py-2 px-4"
+          <Link
+            to="/blindtest"
+            className="nav-pill nav-pill--green"
             data-testid="nav-blindtest"
           >
             Blind Test
@@ -250,8 +254,8 @@ const Header = ({ showSearch = true }) => {
 
       {/* Click outside to close dropdown */}
       {showDropdown && (
-        <div 
-          className="fixed inset-0 z-40" 
+        <div
+          className="fixed inset-0 z-40"
           onClick={() => setShowDropdown(false)}
         />
       )}
@@ -263,60 +267,99 @@ const Header = ({ showSearch = true }) => {
 const Home = () => {
   const navigate = useNavigate();
 
+  // IL MANQUAIT TOUTE CETTE LOGIQUE ICI :
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  // Logique de recherche Deezer
+  useEffect(() => {
+    if (searchQuery.length > 2) {
+      setIsSearching(true);
+      const timer = setTimeout(async () => {
+        try {
+          const res = await axios.get(`https://api.deezer.com/search/artist?q=${searchQuery}`);
+          setSearchResults(res.data.data || []);
+        } catch (err) {
+          setSearchResults([]);
+        } finally {
+          setIsSearching(false);
+        }
+      }, 400);
+      return () => clearTimeout(timer);
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchQuery]);
+
+  const handleArtistClick = (artist) => {
+    setShowDropdown(false);
+    navigate(`/artist/${artist.id}`);
+  };
+
   return (
-    <div className="min-h-screen">
-      <Header showSearch={true} />
-      
+    <div className="min-h-screen bg-[#121212]">
+      {/* On passe TOUTES les props au Header pour qu'il ne crash pas */}
+      <Header
+        showSearch={true}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        searchResults={searchResults}
+        isSearching={isSearching}
+        showDropdown={showDropdown}
+        setShowDropdown={setShowDropdown}
+        handleArtistClick={handleArtistClick}
+      />
+
       {/* Hero Section */}
-      <section className="gradient-hero pt-20 pb-32 px-4" data-testid="hero-section">
+      <section className="gradient-hero pt-32 pb-32 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight mb-6 animate-fadeIn">
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tighter mb-6 uppercase leading-tight">
             L'encyclopédie de tes
             <span className="text-[#1db954] block mt-2">artistes préférés</span>
           </h1>
-          <p className="text-xl text-[#B3B3B3] max-w-2xl mx-auto mb-10 animate-fadeIn stagger-1">
+          <p className="text-xl text-[#B3B3B3] max-w-2xl mx-auto mb-10 font-medium">
             Découvre les artistes, explore les classements Billboard et teste tes connaissances musicales.
           </p>
         </div>
       </section>
 
       {/* Feature Cards */}
-      <section className="max-w-4xl mx-auto px-4 -mt-16" data-testid="features-section">
+      <section className="max-w-6xl mx-auto px-4 -mt-20 relative z-10">
         <div className="grid md:grid-cols-2 gap-6">
-          <div 
-            className="feature-card animate-fadeIn stagger-2"
+          <div
+            className="feature-card bg-[#181818] p-8 rounded-[32px] border border-white/5 hover:border-[#1db954]/50 transition-all cursor-pointer group shadow-2xl"
             onClick={() => navigate("/billboard")}
-            data-testid="billboard-card"
           >
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 rounded-full bg-[#282828] flex items-center justify-center">
-                <Trophy className="w-7 h-7 text-[#1db954]" />
+            <div className="flex items-center gap-5 mb-6">
+              <div className="w-16 h-16 rounded-3xl bg-[#282828] flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Trophy className="w-8 h-8 text-[#1db954]" />
               </div>
-              <h2 className="text-2xl font-bold">Billboard Top 100</h2>
+              <h2 className="text-3xl font-black uppercase tracking-tighter">Billboard Top 100</h2>
             </div>
-            <p className="text-[#B3B3B3] mb-4">
+            <p className="text-[#B3B3B3] mb-6 font-medium leading-relaxed">
               Explore les classements de 2010 à aujourd'hui. Découvre les hits qui ont marqué chaque année.
             </p>
-            <div className="flex items-center text-[#1db954] font-semibold">
+            <div className="flex items-center text-[#1db954] font-black uppercase tracking-widest text-xs">
               Voir les classements <ChevronRight className="w-5 h-5 ml-1" />
             </div>
           </div>
 
-          <div 
-            className="feature-card animate-fadeIn stagger-3"
+          <div
+            className="feature-card bg-[#181818] p-8 rounded-[32px] border border-white/5 hover:border-[#1db954]/50 transition-all cursor-pointer group shadow-2xl"
             onClick={() => navigate("/blindtest")}
-            data-testid="blindtest-card"
           >
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 rounded-full bg-[#282828] flex items-center justify-center">
-                <Volume2 className="w-7 h-7 text-[#1db954]" />
+            <div className="flex items-center gap-5 mb-6">
+              <div className="w-16 h-16 rounded-3xl bg-[#282828] flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Volume2 className="w-8 h-8 text-[#1db954]" />
               </div>
-              <h2 className="text-2xl font-bold">Blind Test</h2>
+              <h2 className="text-3xl font-black uppercase tracking-tighter">Blind Test</h2>
             </div>
-            <p className="text-[#B3B3B3] mb-4">
+            <p className="text-[#B3B3B3] mb-6 font-medium leading-relaxed">
               Sauras-tu reconnaître ces tubes en seulement quelques secondes ? Teste tes connaissances !
             </p>
-            <div className="flex items-center text-[#1db954] font-semibold">
+            <div className="flex items-center text-[#1db954] font-black uppercase tracking-widest text-xs">
               Jouer maintenant <ChevronRight className="w-5 h-5 ml-1" />
             </div>
           </div>
@@ -324,17 +367,20 @@ const Home = () => {
       </section>
 
       {/* Popular Artists Preview */}
-      <section className="max-w-6xl mx-auto px-4 py-20" data-testid="popular-section">
-        <h2 className="text-3xl font-bold mb-8">Artistes populaires</h2>
-        <p className="text-[#B3B3B3] mb-8">
+      <section className="max-w-6xl mx-auto px-4 py-24">
+        <div className="flex items-center justify-between mb-12">
+          <h2 className="text-4xl font-black uppercase tracking-tighter">Artistes populaires</h2>
+          <div className="h-px flex-1 bg-white/5 mx-8"></div>
+        </div>
+        <p className="text-[#B3B3B3] text-lg font-medium mb-8">
           Utilise la barre de recherche pour découvrir n'importe quel artiste sur Deezer.
         </p>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-[#282828] py-8 px-4">
-        <div className="max-w-6xl mx-auto text-center text-[#7A7A7A]">
-          <p>Music Hub - Données fournies par Deezer & Billboard</p>
+      <footer className="border-t border-[#282828] py-12 px-4 bg-[#0a0a0a]">
+        <div className="max-w-6xl mx-auto text-center text-[#7A7A7A] font-bold uppercase tracking-widest text-[10px]">
+          <p>Music Hub - Données fournies par Deezer & Billboard © 2026</p>
         </div>
       </footer>
     </div>
@@ -362,10 +408,10 @@ const GhostwritingSection = ({ artist, songs }) => {
           onClose={() => setActiveYoutube(null)}
         />
       )}
-      
+
       <div className="space-y-3">
         {songs.map((song, index) => (
-          <div 
+          <div
             key={index}
             className="group flex items-center gap-4 p-4 bg-[#181818] rounded-xl border border-[#282828] hover:border-[#f1c40f]/40 hover:bg-[#282828] transition-all animate-fadeIn"
             style={{ animationDelay: `${index * 0.05}s` }}
@@ -409,7 +455,7 @@ const GhostwritingSection = ({ artist, songs }) => {
                   </>
                 ) : (
                   <>
-                    <Youtube className="w-4 h-4 text-[#ff0000]" />
+                    <YoutubeIcon className="w-4 h-4 text-[#ff0000]" />
                     <span className="hidden sm:inline">Écouter</span>
                   </>
                 )}
@@ -447,12 +493,12 @@ const ArtistPage = () => {
           axios.get(`${API}/artist/${artistId}/top`),
           axios.get(`${API}/artist/${artistId}/related`)
         ]);
-        
+
         setArtist(artistRes.data);
         setAlbums(albumsRes.data.albums || []);
         setTopTracks(tracksRes.data.tracks || []);
         setRelatedArtists(relatedRes.data.related || []);
-        
+
         // Fetch Discogs credits + curated extras
         if (artistRes.data.name) {
           try {
@@ -527,13 +573,13 @@ const ArtistPage = () => {
   return (
     <div className="min-h-screen" data-testid="artist-page">
       <Header />
-      
+
       {/* Artist Hero */}
       <section className="relative">
-        <div 
+        <div
           className="h-80 bg-cover bg-center"
-          style={{ 
-            backgroundImage: `linear-gradient(to bottom, rgba(18,18,18,0.3), #121212), url(${artist.picture_xl || artist.picture_big})` 
+          style={{
+            backgroundImage: `linear-gradient(to bottom, rgba(18,18,18,0.3), #121212), url(${artist.picture_xl || artist.picture_big})`
           }}
         />
         <div className="absolute bottom-0 left-0 right-0 p-8">
@@ -578,8 +624,8 @@ const ArtistPage = () => {
             <h2 className="text-2xl font-bold mb-6">Titres populaires</h2>
             <div className="space-y-2" data-testid="top-tracks">
               {topTracks.map((track, index) => (
-                <div 
-                  key={track.id} 
+                <div
+                  key={track.id}
                   className="track-row flex items-center gap-4 animate-fadeIn"
                   style={{ animationDelay: `${index * 0.05}s` }}
                   data-testid={`track-${track.id}`}
@@ -612,8 +658,8 @@ const ArtistPage = () => {
             <h2 className="text-2xl font-bold mb-6">Discographie</h2>
             <div className="space-y-4" data-testid="albums-list">
               {albums.slice(0, 8).map((album, index) => (
-                <div 
-                  key={album.id} 
+                <div
+                  key={album.id}
                   className="flex items-center gap-4 p-3 rounded-lg hover:bg-[#282828] transition-colors animate-fadeIn"
                   style={{ animationDelay: `${index * 0.05}s` }}
                   data-testid={`album-${album.id}`}
@@ -642,10 +688,10 @@ const ArtistPage = () => {
               Le saviez-vous ?
             </h2>
             <p className="text-[#B3B3B3] text-sm mb-6">Anecdotes sur {artist.name}</p>
-            
+
             <div className="grid sm:grid-cols-2 gap-4">
               {extras.anecdotes.map((anecdote, index) => (
-                <div 
+                <div
                   key={index}
                   className="relative p-5 bg-[#181818] rounded-xl border border-[#282828] hover:border-[#1db954]/40 transition-colors animate-fadeIn"
                   style={{ animationDelay: `${index * 0.08}s` }}
@@ -675,18 +721,18 @@ const ArtistPage = () => {
             <p className="text-[#B3B3B3] text-sm mb-6">
               Auteurs et producteurs des chansons de {artist.name}
             </p>
-            
+
             <div className="space-y-2">
               {geniusCredits.credits.map((song, index) => (
-                <div 
+                <div
                   key={song.id}
                   className="flex items-start gap-4 p-4 bg-[#181818] rounded-xl border border-[#282828] hover:bg-[#1e1e1e] transition-all animate-fadeIn"
                   style={{ animationDelay: `${index * 0.04}s` }}
                   data-testid={`genius-credit-${song.id}`}
                 >
                   {song.thumbnail && (
-                    <img 
-                      src={song.thumbnail} 
+                    <img
+                      src={song.thumbnail}
                       alt={song.title}
                       className="w-14 h-14 rounded-lg object-cover shrink-0"
                     />
@@ -746,7 +792,7 @@ const ArtistPage = () => {
           <div className="mt-16" data-testid="collaborations-section">
             <h2 className="text-2xl font-bold mb-2">Collaborations & Connexions</h2>
             <p className="text-[#B3B3B3] text-sm mb-6">Artistes liés et collaborateurs</p>
-            
+
             {/* Discogs Real Collaborations - Members/Groups */}
             {credits?.collaborations?.length > 0 && (
               <div className="mb-8">
@@ -757,12 +803,12 @@ const ArtistPage = () => {
                 <div className="collab-grid">
                   {credits.collaborations.slice(0, 8).map((collab, index) => {
                     const nameParts = collab.name.split(' ');
-                    const initials = nameParts.length >= 2 
+                    const initials = nameParts.length >= 2
                       ? nameParts[0][0] + '.' + nameParts[nameParts.length - 1][0]
                       : collab.name.slice(0, 2).toUpperCase();
-                    
+
                     return (
-                      <div 
+                      <div
                         key={collab.id}
                         className="collab-item animate-fadeIn"
                         style={{ animationDelay: `${index * 0.05}s` }}
@@ -775,10 +821,10 @@ const ArtistPage = () => {
                         </span>
                         <div className="collab-circle">
                           {collab.thumbnail ? (
-                            <img 
-                              src={collab.thumbnail} 
+                            <img
+                              src={collab.thumbnail}
                               alt={collab.name}
-                              onError={(e) => { 
+                              onError={(e) => {
                                 e.target.style.display = 'none';
                                 e.target.parentNode.innerText = initials;
                               }}
@@ -807,15 +853,15 @@ const ArtistPage = () => {
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {credits.writing_credits.slice(0, 6).map((credit, index) => (
-                    <div 
+                    <div
                       key={credit.release_id}
                       className="flex items-center gap-3 p-3 bg-[#181818] rounded-lg hover:bg-[#282828] transition-colors animate-fadeIn"
                       style={{ animationDelay: `${index * 0.05}s` }}
                       data-testid={`writing-credit-${credit.release_id}`}
                     >
                       {credit.thumb && (
-                        <img 
-                          src={credit.thumb} 
+                        <img
+                          src={credit.thumb}
                           alt={credit.title}
                           className="w-12 h-12 rounded object-cover"
                         />
@@ -846,15 +892,15 @@ const ArtistPage = () => {
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {credits.production_credits.slice(0, 6).map((credit, index) => (
-                    <div 
+                    <div
                       key={credit.release_id}
                       className="flex items-center gap-3 p-3 bg-[#181818] rounded-lg hover:bg-[#282828] transition-colors animate-fadeIn"
                       style={{ animationDelay: `${index * 0.05}s` }}
                       data-testid={`production-credit-${credit.release_id}`}
                     >
                       {credit.thumb && (
-                        <img 
-                          src={credit.thumb} 
+                        <img
+                          src={credit.thumb}
                           alt={credit.title}
                           className="w-12 h-12 rounded object-cover"
                         />
@@ -881,7 +927,7 @@ const ArtistPage = () => {
                 <h3 className="text-lg font-semibold text-[#B3B3B3] mb-4">Artistes similaires</h3>
                 <div className="collab-grid">
                   {relatedArtists.slice(0, 10).map((related, index) => (
-                    <div 
+                    <div
                       key={related.id}
                       className="collab-item animate-fadeIn"
                       style={{ animationDelay: `${index * 0.05}s` }}
@@ -890,10 +936,10 @@ const ArtistPage = () => {
                     >
                       <div className="collab-circle">
                         {related.picture_medium ? (
-                          <img 
-                            src={related.picture_medium} 
+                          <img
+                            src={related.picture_medium}
                             alt={related.name}
-                            onError={(e) => { 
+                            onError={(e) => {
                               e.target.style.display = 'none';
                               e.target.parentNode.innerText = related.initials;
                             }}
@@ -914,8 +960,8 @@ const ArtistPage = () => {
 
       {/* Back button */}
       <div className="max-w-6xl mx-auto px-4 pb-12">
-        <button 
-          onClick={() => navigate(-1)} 
+        <button
+          onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-[#B3B3B3] hover:text-white transition-colors"
           data-testid="back-button"
         >
@@ -954,7 +1000,7 @@ const BillboardPage = () => {
         }
         const fetchedSongs = response.data.songs || [];
         setSongs(fetchedSongs);
-        
+
         // Fetch Deezer previews for first 20 songs in background
         if (fetchedSongs.length > 0) {
           const queries = fetchedSongs.slice(0, 20).map(s => `${s.title} ${s.artist}`);
@@ -989,19 +1035,19 @@ const BillboardPage = () => {
   return (
     <div className="min-h-screen" data-testid="billboard-page">
       <Header />
-      
+
       {/* Hero */}
       <section className="gradient-hero py-16 px-4">
         <div className="max-w-4xl mx-auto">
-          <button 
-            onClick={() => navigate(-1)} 
+          <button
+            onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-[#B3B3B3] hover:text-white transition-colors mb-8"
             data-testid="back-button"
           >
             <ArrowLeft className="w-5 h-5" />
             Retour
           </button>
-          
+
           <div className="flex items-center gap-4 mb-6">
             <div className="w-16 h-16 rounded-full bg-[#282828] flex items-center justify-center">
               <Trophy className="w-8 h-8 text-[#1db954]" />
@@ -1077,7 +1123,7 @@ const BillboardPage = () => {
             {songs.map((song, index) => {
               const preview = previews[index];
               return (
-                <div 
+                <div
                   key={`${song.rank}-${song.title}`}
                   className="billboard-row grid grid-cols-[50px_40px_1fr_1fr_60px] gap-3 items-center animate-fadeIn"
                   style={{ animationDelay: `${index * 0.02}s` }}
@@ -1140,7 +1186,7 @@ const BlindTestPage = () => {
 
   const startGame = async () => {
     if (!playerName.trim()) return;
-    
+
     setLoading(true);
     try {
       const response = await axios.get(`${API}/blindtest/songs`, { params: { count: 10 } });
@@ -1159,10 +1205,10 @@ const BlindTestPage = () => {
 
   const handleAnswer = (choice) => {
     if (selectedAnswer !== null) return;
-    
+
     setSelectedAnswer(choice);
     setShowResult(true);
-    
+
     if (choice.correct) {
       setScore(prev => prev + 1);
     }
@@ -1200,8 +1246,8 @@ const BlindTestPage = () => {
       {/* Start Screen */}
       {gameState === "start" && (
         <section className="max-w-2xl mx-auto px-4 py-20 text-center">
-          <button 
-            onClick={() => navigate(-1)} 
+          <button
+            onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-[#B3B3B3] hover:text-white transition-colors mb-12 mx-auto"
             data-testid="back-button"
           >
@@ -1212,7 +1258,7 @@ const BlindTestPage = () => {
           <div className="w-24 h-24 rounded-full bg-[#282828] flex items-center justify-center mx-auto mb-8">
             <Volume2 className="w-12 h-12 text-[#1db954]" />
           </div>
-          
+
           <h1 className="text-4xl md:text-5xl font-black mb-4">Blind Test</h1>
           <p className="text-xl text-[#B3B3B3] mb-12">
             Écoute l'extrait et devine la chanson !
@@ -1251,7 +1297,7 @@ const BlindTestPage = () => {
               <h2 className="text-2xl font-bold mb-6">Meilleurs scores</h2>
               <div className="bg-[#181818] rounded-xl p-6" data-testid="high-scores">
                 {highScores.slice(0, 5).map((hs, index) => (
-                  <div 
+                  <div
                     key={hs.id || index}
                     className="flex items-center justify-between py-3 border-b border-[#282828] last:border-0"
                   >
@@ -1282,7 +1328,7 @@ const BlindTestPage = () => {
               <span className="score-badge text-sm">Score: {score}</span>
             </div>
             <div className="progress-bar">
-              <div 
+              <div
                 className="progress-fill"
                 style={{ width: `${((currentIndex + 1) / songs.length) * 100}%` }}
               />
@@ -1313,7 +1359,7 @@ const BlindTestPage = () => {
                 if (choice.correct) btnClass += " correct";
                 else if (selectedAnswer === choice && !choice.correct) btnClass += " incorrect";
               }
-              
+
               return (
                 <button
                   key={index}
@@ -1360,7 +1406,7 @@ const BlindTestPage = () => {
           <div className="w-24 h-24 rounded-full bg-[#282828] flex items-center justify-center mx-auto mb-8">
             <Trophy className="w-12 h-12 text-[#1db954]" />
           </div>
-          
+
           <h1 className="text-4xl md:text-5xl font-black mb-4">Partie terminée !</h1>
           <p className="text-xl text-[#B3B3B3] mb-8">
             Bravo {playerName} !
@@ -1396,7 +1442,7 @@ const BlindTestPage = () => {
               <h2 className="text-2xl font-bold mb-6">Classement</h2>
               <div className="bg-[#181818] rounded-xl p-6" data-testid="final-high-scores">
                 {highScores.slice(0, 10).map((hs, index) => (
-                  <div 
+                  <div
                     key={hs.id || index}
                     className={`flex items-center justify-between py-3 border-b border-[#282828] last:border-0 ${hs.player_name === playerName ? 'bg-[#1db954]/10 -mx-4 px-4 rounded' : ''}`}
                   >
@@ -1462,10 +1508,10 @@ const ArtistGraphPage = () => {
           axios.get(`${API}/artist/${artistId}/graph`, { params: { depth: 2 } }),
           axios.get(`${API}/artist/${artistId}`)
         ]);
-        
+
         setGraphData(graphRes.data);
         setArtistName(artistRes.data.name || "");
-        
+
         // Load images for nodes
         const data = graphRes.data;
         data.nodes.forEach(node => {
@@ -1492,7 +1538,7 @@ const ArtistGraphPage = () => {
   const nodeCanvasObject = useCallback((node, ctx, globalScale) => {
     const size = node.is_main ? 28 : 18;
     const fontSize = Math.max(10, 12 / globalScale);
-    
+
     // Draw circle background
     ctx.beginPath();
     ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false);
@@ -1501,7 +1547,7 @@ const ArtistGraphPage = () => {
     ctx.strokeStyle = node.is_main ? "#1ed760" : "#333";
     ctx.lineWidth = 2;
     ctx.stroke();
-    
+
     // Draw image if loaded
     if (node._img && node._img.complete) {
       ctx.save();
@@ -1510,7 +1556,7 @@ const ArtistGraphPage = () => {
       ctx.clip();
       ctx.drawImage(node._img, node.x - size + 2, node.y - size + 2, (size - 2) * 2, (size - 2) * 2);
       ctx.restore();
-      
+
       // Draw border
       ctx.beginPath();
       ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false);
@@ -1518,7 +1564,7 @@ const ArtistGraphPage = () => {
       ctx.lineWidth = node.is_main ? 3 : 1.5;
       ctx.stroke();
     }
-    
+
     // Draw label
     ctx.font = `${node.is_main ? "bold" : ""} ${fontSize}px Plus Jakarta Sans, Inter, sans-serif`;
     ctx.textAlign = "center";
@@ -1530,11 +1576,11 @@ const ArtistGraphPage = () => {
   return (
     <div className="min-h-screen" data-testid="graph-page">
       <Header showSearch={false} />
-      
+
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => navigate(`/artist/${artistId}`)}
               className="flex items-center gap-2 text-[#B3B3B3] hover:text-white transition-colors"
               data-testid="back-to-artist"
@@ -1553,8 +1599,8 @@ const ArtistGraphPage = () => {
             </div>
           </div>
         </div>
-        
-        <div 
+
+        <div
           ref={containerRef}
           className="bg-[#181818] rounded-2xl border border-[#282828] overflow-hidden relative"
           data-testid="graph-container"
@@ -1601,15 +1647,13 @@ const ArtistGraphPage = () => {
 function App() {
   return (
     <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/artist/:artistId" element={<ArtistPage />} />
-          <Route path="/artist/:artistId/graph" element={<ArtistGraphPage />} />
-          <Route path="/billboard" element={<BillboardPage />} />
-          <Route path="/blindtest" element={<BlindTestPage />} />
-        </Routes>
-      </BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/artist/:artistId" element={<ArtistPage />} />
+        <Route path="/artist/:artistId/graph" element={<ArtistGraphPage />} />
+        <Route path="/billboard" element={<BillboardPage />} />
+        <Route path="/blindtest" element={<BlindTestPage />} />
+      </Routes>
     </div>
   );
 }
